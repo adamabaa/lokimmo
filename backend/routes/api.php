@@ -4,8 +4,6 @@ use App\Middlewares\AuthMiddleware;
 
 // ── Santé de l'API ──────────────────────────────────────────
 $router->get('/api/health', 'HealthController@index');
-// DEBUG TEMPORAIRE — à supprimer après
-$router->get('/api/debug/hash', 'HealthController@hash');
 
 // ── Authentification (publiques) ────────────────────────────
 $router->post('/api/auth/register', 'AuthController@register');
