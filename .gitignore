@@ -1,0 +1,27 @@
+# ============================================================
+#  LOKIMMO — .gitignore racine
+# ============================================================
+
+# --- BACKEND ---
+backend/.env
+backend/vendor/
+backend/storage/logs/*
+backend/storage/cache/*
+backend/public/uploads/logos/*
+
+# Garder les dossiers vides (avec .gitkeep)
+!backend/storage/logs/.gitkeep
+!backend/storage/cache/.gitkeep
+!backend/public/uploads/logos/.gitkeep
+
+# --- FRONTEND ---
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.production
+
+# --- SYSTÈME ---
+.DS_Store
+Thumbs.db
+*.log
