@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 90" width="340" height="90">
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#C9A84C"/>
+      <stop offset="50%" style="stop-color:#F0C96B"/>
+      <stop offset="100%" style="stop-color:#B8922A"/>
+    </linearGradient>
+    <linearGradient id="goldGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#F5D47A"/>
+      <stop offset="100%" style="stop-color:#C9A84C"/>
+    </linearGradient>
+    <filter id="softShadow">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000000" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- ICÔNE MAISON STYLISÉE -->
+  <g filter="url(#softShadow)">
+    <!-- Toit principal -->
+    <polygon points="45,8 82,38 8,38" fill="url(#goldGrad)"/>
+    <!-- Cheminée -->
+    <rect x="58" y="14" width="7" height="14" rx="1" fill="url(#goldGrad2)"/>
+    <!-- Corps maison -->
+    <rect x="14" y="37" width="62" height="38" rx="2" fill="#1A1A1A"/>
+    <!-- Fenêtre gauche -->
+    <rect x="20" y="45" width="16" height="14" rx="2" fill="url(#goldGrad)" opacity="0.85"/>
+    <line x1="28" y1="45" x2="28" y2="59" stroke="#1A1A1A" stroke-width="1.5"/>
+    <line x1="20" y1="52" x2="36" y2="52" stroke="#1A1A1A" stroke-width="1.5"/>
+    <!-- Fenêtre droite -->
+    <rect x="54" y="45" width="16" height="14" rx="2" fill="url(#goldGrad)" opacity="0.85"/>
+    <line x1="62" y1="45" x2="62" y2="59" stroke="#1A1A1A" stroke-width="1.5"/>
+    <line x1="54" y1="52" x2="70" y2="52" stroke="#1A1A1A" stroke-width="1.5"/>
+    <!-- Porte centrale -->
+    <rect x="33" y="52" width="24" height="23" rx="3" fill="#0D0D0D"/>
+    <rect x="35" y="54" width="20" height="21" rx="2" fill="url(#goldGrad)" opacity="0.2"/>
+    <circle cx="51" cy="65" r="2" fill="url(#goldGrad)"/>
+    <!-- Sol -->
+    <rect x="8" y="74" width="74" height="3" rx="1.5" fill="url(#goldGrad)"/>
+  </g>
+
+  <!-- Texte Lok (noir) -->
+  <text x="102" y="52" font-family="Georgia,'Times New Roman',serif" font-size="38" font-weight="700" fill="#1A1A1A" letter-spacing="-1">Lok</text>
+  <!-- Texte immo (or) -->
+  <text x="173" y="52" font-family="Georgia,'Times New Roman',serif" font-size="38" font-weight="700" fill="url(#goldGrad)" letter-spacing="-1">immo</text>
+  <!-- Ligne décorative -->
+  <rect x="102" y="58" width="224" height="2.5" rx="1.25" fill="url(#goldGrad)" opacity="0.5"/>
+  <!-- Tagline -->
+  <text x="103" y="76" font-family="Arial,Helvetica,sans-serif" font-size="10.5" fill="#888888" letter-spacing="3.5">GESTION LOCATIVE</text>
+</svg>
