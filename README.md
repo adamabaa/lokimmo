@@ -36,8 +36,3 @@ npm run dev
 - **Backend** : InfinityFree (upload FTP manuel)
 
 ## Comptes de test (développement uniquement)
-
-⚠️ Supprimer avant la production.
-
-- Super admin : `superadmin@lokimmo.com`
-- Admin agence : `adama@agence-dakar.com` (slug : `aksum-immo`)
