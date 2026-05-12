@@ -13,13 +13,16 @@ class App
         // Gestion erreurs globale
         self::registerErrorHandlers();
 
-        // OPTIONS géré par .htaccess — on sort juste si ça passe quand même
+        // CORS — doit être avant tout le reste
+        self::setCorsHeaders();
+
+        // OPTIONS preflight — on répond et on sort
         if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
             http_response_code(204);
             exit;
         }
 
-        // Headers sécurité uniquement (pas CORS)
+        // Headers sécurité
         self::setSecurityHeaders();
 
         $request = new Request();
@@ -28,6 +31,28 @@ class App
         $router = new Router();
         require_once BASE_PATH . '/routes/api.php';
         $router->resolve($request);
+    }
+
+    private static function setCorsHeaders(): void
+    {
+        $allowedOrigins = array_filter(array_map(
+            'trim',
+            explode(',', env('ALLOWED_ORIGINS', ''))
+        ));
+
+        $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+
+        // En local sans origin (ex: Postman), on laisse passer
+        if (empty($origin) && env('APP_ENV') === 'local') {
+            header('Access-Control-Allow-Origin: *');
+        } elseif (in_array($origin, $allowedOrigins, true)) {
+            header("Access-Control-Allow-Origin: {$origin}");
+        }
+
+        header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
+        header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Agency-Slug');
+        header('Access-Control-Allow-Credentials: true');
+        header('Access-Control-Max-Age: 86400');
     }
 
     private static function registerErrorHandlers(): void

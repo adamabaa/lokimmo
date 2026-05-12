@@ -1,7 +1,2 @@
 RewriteEngine On
-
-# Laisser passer OPTIONS
-RewriteCond %{REQUEST_METHOD} OPTIONS
-RewriteRule ^(.*)$ public/$1 [R=200,L]
-
 RewriteRule ^(.*)$ public/$1 [L]
