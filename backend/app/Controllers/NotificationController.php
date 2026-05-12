@@ -115,7 +115,9 @@ class NotificationController extends BaseController
         $latePayments = $stmt->fetchAll();
 
         foreach ($latePayments as $payment) {
-            if ($this->notificationExists($agencyId, 'payment_late', $payment['id'])) {
+            $body = "Le loyer de {$payment['property_title']} (échéance : {$payment['due_date']}) n'a pas été réglé.";
+
+            if ($this->notificationExists($agencyId, 'payment_late', $body)) {
                 continue;
             }
 
@@ -123,10 +125,9 @@ class NotificationController extends BaseController
                 $agencyId,
                 'payment_late',
                 "Loyer en retard — {$payment['tenant_name']}",
-                "Le loyer de {$payment['property_title']} (échéance : {$payment['due_date']}) n'a pas été réglé."
+                $body
             );
-            $count++
-        ;
+            $count++;
         }
 
         // 2. Contrats expirant dans 30 jours
@@ -146,7 +147,9 @@ class NotificationController extends BaseController
         $expiringContracts = $stmt->fetchAll();
 
         foreach ($expiringContracts as $contract) {
-            if ($this->notificationExists($agencyId, 'contract_expiring', $contract['id'])) {
+            $body = "Le contrat de {$contract['property_title']} expire le {$contract['end_date']}.";
+
+            if ($this->notificationExists($agencyId, 'contract_expiring', $body)) {
                 continue;
             }
 
@@ -154,7 +157,7 @@ class NotificationController extends BaseController
                 $agencyId,
                 'contract_expiring',
                 "Contrat expirant — {$contract['tenant_name']}",
-                "Le contrat de {$contract['property_title']} expire le {$contract['end_date']}."
+                $body
             );
             $count++;
         }
@@ -167,14 +170,14 @@ class NotificationController extends BaseController
     private function notificationExists(
         int $agencyId,
         string $type,
-        int $refId
+        string $body
     ): bool {
         $stmt = $this->db->prepare(
             'SELECT COUNT(*) FROM notifications
              WHERE agency_id = ? AND type = ?
-               AND body LIKE ? AND created_at > DATE_SUB(NOW(), INTERVAL 1 DAY)'
+               AND body = ? AND created_at > DATE_SUB(NOW(), INTERVAL 1 DAY)'
         );
-        $stmt->execute([$agencyId, $type, "%{$refId}%"]);
+        $stmt->execute([$agencyId, $type, $body]);
         return (int) $stmt->fetchColumn() > 0;
     }
 
