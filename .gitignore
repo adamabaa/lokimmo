@@ -3,7 +3,7 @@
 # ============================================================
 
 # --- BACKEND ---
-backend/.env
+backend/.env*
 backend/vendor/
 backend/storage/logs/*
 backend/storage/cache/*
