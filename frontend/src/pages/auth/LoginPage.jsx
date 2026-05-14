@@ -121,7 +121,7 @@ export default function LoginPage() {
     }}>
 
       {/* ── Côté gauche — Présentation ── */}
-      <div style={{
+      <div className="hide-on-mobile" style={{
         flex:           1,
         display:        'flex',
         flexDirection:  'column',
@@ -131,9 +131,6 @@ export default function LoginPage() {
         borderRight:    '1px solid rgba(255,255,255,0.05)',
         position:       'relative',
         overflow:       'hidden',
-
-        // Masquer sur mobile
-        '@media (max-width: 768px)': { display: 'none' },
       }}>
 
         {/* Effets de fond */}
@@ -342,10 +339,9 @@ export default function LoginPage() {
         }} />
 
         {/* Logo mobile (masqué sur desktop) */}
-        <div style={{
+        <div className="show-on-mobile" style={{
           textAlign:     'center',
           marginBottom:  '2rem',
-          display:       'none',
         }}>
           <div style={{
             fontFamily: 'var(--font-display)',
