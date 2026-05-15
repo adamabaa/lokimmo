@@ -99,6 +99,13 @@ export default function LoginPage() {
   const [form,    setForm]    = useState({ email: '', password: '', slug: '' })
   const [error,   setError]   = useState('')
   const [loading, setLoading] = useState(false)
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 1024)
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 1024)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   const handle = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
@@ -118,20 +125,22 @@ export default function LoginPage() {
       minHeight:  '100vh',
       display:    'flex',
       background: '#0a0c10',
+      justifyContent: isMobile ? 'center' : 'flex-start',
     }}>
 
       {/* ── Côté gauche — Présentation ── */}
-      <div className="hide-on-mobile" style={{
-        flex:           1,
-        display:        'flex',
-        flexDirection:  'column',
-        justifyContent: 'center',
-        padding:        '3rem 4rem',
-        background:     'linear-gradient(135deg, #0d1117 0%, #0f1420 100%)',
-        borderRight:    '1px solid rgba(255,255,255,0.05)',
-        position:       'relative',
-        overflow:       'hidden',
-      }}>
+      {!isMobile && (
+        <div className="hide-on-mobile" style={{
+          flex:           1,
+          display:        'flex',
+          flexDirection:  'column',
+          justifyContent: 'center',
+          padding:        '3rem 4rem',
+          background:     'linear-gradient(135deg, #0d1117 0%, #0f1420 100%)',
+          borderRight:    '1px solid rgba(255,255,255,0.05)',
+          position:       'relative',
+          overflow:       'hidden',
+        }}>
 
         {/* Effets de fond */}
         <div style={{
@@ -316,7 +325,8 @@ export default function LoginPage() {
             <rect x="0" y="118" width="800" height="4" fill="#d4a853" opacity="0.3" />
           </svg>
         </div>
-      </div>
+        </div>
+      )}
 
       {/* ── Côté droit — Formulaire ── */}
       <div style={{
