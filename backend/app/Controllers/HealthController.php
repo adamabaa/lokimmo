@@ -10,16 +10,26 @@ use App\Core\Database;
 
 class HealthController extends BaseController
 {
-  
-public function hash(Request $request): void
-{
-    $password = 'password';
-    $hash     = password_hash($password, PASSWORD_BCRYPT);
-    $verify   = password_verify($password, $hash);
+    public function index(Request $request): void
+    {
+        try {
+            // Vérifier la connexion DB
+            $db = Database::getInstance();
+            $db->query("SELECT 1");
 
-    Response::json([
-        'hash'   => $hash,
-        'verify' => $verify,
-    ]);
-}
+            Response::json([
+                'success' => true,
+                'status'  => 'ok',
+                'message' => 'Lokimmo API is running',
+                'version' => '1.0.0',
+                'env'     => env('APP_ENV', 'unknown'),
+            ]);
+        } catch (\Exception $e) {
+            Response::json([
+                'success' => false,
+                'status'  => 'error',
+                'message' => 'Database connection failed',
+            ], 500);
+        }
+    }
 }
