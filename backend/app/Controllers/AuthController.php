@@ -95,26 +95,53 @@ class AuthController extends BaseController
     {
         $data = $request->all();
 
-        // ── Rate limiting : 5 tentatives par minute par IP ──
+        // ── Résoudre l'agencyId depuis le slug ──
+        $slug = $request->getHeader('x-agency-slug')
+            ?? $data['slug']
+            ?? null;
+
+        if (empty($slug)) {
+            Response::error('Slug de l\'agence requis', 400);
+            exit;
+        }
+
+        $pdo  = \App\Core\Database::getInstance();
+        $stmt = $pdo->prepare(
+            'SELECT id, is_active FROM agencies WHERE slug = ? LIMIT 1'
+        );
+        $stmt->execute([$slug]);
+        $agency = $stmt->fetch();
+
+        if (!$agency) {
+            Response::notFound("Agence '{$slug}' introuvable");
+            exit;
+        }
+
+        if (!(bool) $agency['is_active']) {
+            Response::error('Ce compte agence est désactivé', 403);
+            exit;
+        }
+
+        $request->agencyId = (int) $agency['id'];
+
+        // ── Rate limiting ──
         $ip  = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
         $key = "login:{$ip}";
 
         if (!RateLimiter::check($key, 5, 60)) {
             $retryAfter = RateLimiter::retryAfter($key);
             header("Retry-After: {$retryAfter}");
-
-            // Log tentative de brute force
             LogService::log(
-                $request->agencyId ?? 0,
+                $request->agencyId,
                 0,
                 'brute_force_attempt',
                 "Tentative de brute force depuis {$ip}"
             );
-
             Response::error(
                 "Trop de tentatives. Réessayez dans {$retryAfter} secondes.",
                 429
             );
+            exit;
         }
 
         $errors = ValidationService::validate($data, [
@@ -124,6 +151,7 @@ class AuthController extends BaseController
 
         if (!empty($errors)) {
             Response::error('Données invalides', 422, $errors);
+            exit;
         }
 
         $user = $this->userModel->findByEmail(
@@ -132,24 +160,22 @@ class AuthController extends BaseController
         );
 
         if ($user === null || !password_verify($data['password'], $user['password'])) {
-            // Log échec de connexion
             LogService::log(
-                $request->agencyId ?? 0,
+                $request->agencyId,
                 0,
                 'login_failed',
                 "Échec connexion pour : {$data['email']}"
             );
-
             Response::unauthorized('Email ou mot de passe incorrect');
+            exit;
         }
 
         if (!(bool) $user['is_active']) {
             Response::forbidden('Votre compte a été désactivé');
+            exit;
         }
 
-        // Connexion réussie — reset le rate limiter
         RateLimiter::reset($key);
-
         $this->userModel->updateLastLogin($user['id']);
 
         LogService::log(
