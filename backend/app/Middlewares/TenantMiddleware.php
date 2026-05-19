@@ -13,7 +13,10 @@ class TenantMiddleware
     private const PUBLIC_ROUTES = [
         '/api/health',
         '/api/auth/register',
+        '/api/auth/login',    // ← ajouter
         '/api/super/login',
+        '/api/portal/login',
+        '/api/owner-portal/login',
     ];
 
     public static function handle(Request $request): void
@@ -30,14 +33,25 @@ class TenantMiddleware
             return;
         }
 
-        $slug = $request->getSubdomain();
+        // Prioriser le header X-Agency-Slug (frontend React)
+        $slug = $request->getHeader('x-agency-slug');
 
-        if (empty($slug) || $slug === 'localhost') {
-            $slug = $request->getHeader('x-agency-slug');
+        // Fallback subdomain uniquement en local (pas sur Render/production)
+        if (empty($slug)) {
+            $sub = $request->getSubdomain();
+            if (
+                !empty($sub) &&
+                $sub !== 'localhost' &&
+                !str_contains($sub, 'onrender') &&
+                !str_contains($sub, 'vercel')
+            ) {
+                $slug = $sub;
+            }
         }
 
         if (empty($slug)) {
             Response::error('Agence non identifiée', 400);
+            exit;
         }
 
         $pdo  = Database::getInstance();
@@ -49,10 +63,12 @@ class TenantMiddleware
 
         if (!$agency) {
             Response::notFound("Agence '{$slug}' introuvable");
+            exit;
         }
 
         if (!(bool) $agency['is_active']) {
             Response::error('Ce compte agence est désactivé', 403);
+            exit;
         }
 
         $request->agencyId = (int) $agency['id'];
