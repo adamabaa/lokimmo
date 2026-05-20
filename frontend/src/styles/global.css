@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    LOKIMMO — Design System
    Luxury/Refined — Dark sidebar, accents ambrés, typographie élégante
    ============================================================ */
@@ -420,17 +420,9 @@ h4, h5, h6, p, span, label, button, input, select, textarea {
 }
 
 @media (max-width: 1024px) {
-  :root {
-    --sidebar-width: 0px;
-  }
-  
-  /* Force all inline grid layouts to stack vertically on mobile and small tablets */
-  [style*="display: grid"],
-  [style*="display:grid"] {
-    grid-template-columns: 1fr !important;
-  }
-  
-  /* Utilities for sidebar toggle */
+  /* Ne pas écraser --sidebar-width — la sidebar garde sa largeur (260px) */
+  /* Elle est cachée via transform: translateX(-100%) dans le composant */
+
   .mobile-overlay {
     position: fixed;
     inset: 0;
@@ -439,24 +431,28 @@ h4, h5, h6, p, span, label, button, input, select, textarea {
     z-index: 90;
     animation: fadeIn 0.2s ease;
   }
-  
+
   .hide-on-mobile {
     display: none !important;
   }
-  
+
   .show-on-mobile {
     display: block !important;
   }
 
-  /* Tables horizontal scroll default width */
   .lk-table {
     min-width: 650px;
   }
 
-  /* Responsive dropdown for small screens */
   .lk-notification-dropdown {
     width: calc(100vw - 2rem) !important;
     right: -10px !important;
+  }
+
+  /* Grids inline — forcer 1 colonne sur mobile */
+  [style*="display: grid"],
+  [style*="display:grid"] {
+    grid-template-columns: 1fr !important;
   }
 }
 
