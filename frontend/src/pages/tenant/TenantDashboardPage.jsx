@@ -36,8 +36,15 @@ export default function TenantDashboardPage() {
   const [activeTab,      setActiveTab]      = useState('overview')
   const [receiptPayment, setReceiptPayment] = useState(null)
   const [generating,     setGenerating]     = useState(false)
+  const [isMobile,       setIsMobile]       = useState(window.innerWidth <= 768)
 
   const primaryColor = agency?.primary_color || '#3ecf8e'
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   useEffect(() => {
     Promise.all([
@@ -100,7 +107,7 @@ export default function TenantDashboardPage() {
       {/* Header */}
       <header style={{
         background: '#161920', borderBottom: '1px solid rgba(255,255,255,0.07)',
-        padding: '0 2rem', height: '64px',
+        padding: isMobile ? '0 1rem' : '0 2rem', height: '64px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         position: 'sticky', top: 0, zIndex: 50,
       }}>
@@ -116,29 +123,34 @@ export default function TenantDashboardPage() {
               {agency?.name || 'Lokimmo'}
             </div>
           )}
-          <div style={{
-            background: `${primaryColor}15`, border: `1px solid ${primaryColor}30`,
-            borderRadius: '20px', padding: '2px 10px',
-            fontSize: '0.72rem', color: primaryColor,
-          }}>
-            Espace Locataire
-          </div>
+          {!isMobile && (
+            <div style={{
+              background: `${primaryColor}15`, border: `1px solid ${primaryColor}30`,
+              borderRadius: '20px', padding: '2px 10px',
+              fontSize: '0.72rem', color: primaryColor,
+            }}>
+              Espace Locataire
+            </div>
+          )}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ fontSize: '0.875rem', color: '#8b8d96' }}>
-            {tenant?.first_name} {tenant?.last_name}
-          </div>
+          {!isMobile && (
+            <div style={{ fontSize: '0.875rem', color: '#8b8d96' }}>
+              {tenant?.first_name} {tenant?.last_name}
+            </div>
+          )}
           <button
             onClick={logout}
             style={{
               background: 'transparent', border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: '8px', padding: '6px 12px',
+              borderRadius: '8px', padding: isMobile ? '6px' : '6px 12px',
               color: '#8b8d96', fontSize: '0.8rem', cursor: 'pointer',
               display: 'flex', alignItems: 'center', gap: '6px',
             }}
+            title="Déconnexion"
           >
-            <LogOut size={14} /> Déconnexion
+            <LogOut size={14} /> {!isMobile && 'Déconnexion'}
           </button>
         </div>
       </header>
@@ -146,14 +158,20 @@ export default function TenantDashboardPage() {
       <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 1rem' }}>
 
         {/* Tabs */}
-        <div style={{
-          display: 'flex', gap: '4px',
-          background: '#161920', borderRadius: '10px', padding: '4px',
-          marginBottom: '2rem', border: '1px solid rgba(255,255,255,0.07)',
-        }}>
+        <div 
+          className="lk-scrollbar-hidden"
+          style={{
+            display: 'flex', gap: '4px',
+            background: '#161920', borderRadius: '10px', padding: '4px',
+            marginBottom: '2rem', border: '1px solid rgba(255,255,255,0.07)',
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
           {TABS.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
-              flex: 1, padding: '0.5rem',
+              flex: isMobile ? '0 0 auto' : 1, 
+              padding: isMobile ? '0.5rem 1rem' : '0.5rem',
               background:   activeTab === tab.id ? `${primaryColor}20` : 'transparent',
               border:       `1px solid ${activeTab === tab.id ? `${primaryColor}40` : 'transparent'}`,
               borderRadius: '8px',
@@ -335,9 +353,9 @@ export default function TenantDashboardPage() {
           <div style={{ animation: 'fadeIn 0.3s ease' }}>
             <div style={{
               background: '#161920', border: '1px solid rgba(255,255,255,0.07)',
-              borderRadius: '12px', overflow: 'hidden',
+              borderRadius: '12px', overflowX: 'auto', WebkitOverflowScrolling: 'touch',
             }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+              <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
                 <thead>
                   <tr style={{ background: '#13171f', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                     {['Période', 'Montant dû', 'Montant payé', 'Échéance', 'Statut', ''].map(h => (

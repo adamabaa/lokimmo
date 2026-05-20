@@ -81,7 +81,7 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div style={{
+        <div className="lk-notification-dropdown" style={{
           position:     'absolute', top: '44px', right: 0,
           width:        '360px', maxHeight: '480px',
           background:   'var(--lk-dark-2)',

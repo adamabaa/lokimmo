@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    LOKIMMO — Design System
    Luxury/Refined — Dark sidebar, accents ambrés, typographie élégante
    ============================================================ */
@@ -447,4 +447,24 @@ h4, h5, h6, p, span, label, button, input, select, textarea {
   .show-on-mobile {
     display: block !important;
   }
+
+  /* Tables horizontal scroll default width */
+  .lk-table {
+    min-width: 650px;
+  }
+
+  /* Responsive dropdown for small screens */
+  .lk-notification-dropdown {
+    width: calc(100vw - 2rem) !important;
+    right: -10px !important;
+  }
+}
+
+/* Utility to hide scrollbars while preserving scrolling */
+.lk-scrollbar-hidden {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* IE and Edge */
+}
+.lk-scrollbar-hidden::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
 }

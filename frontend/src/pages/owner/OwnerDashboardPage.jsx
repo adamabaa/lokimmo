@@ -56,8 +56,15 @@ export default function OwnerDashboardPage() {
   const [propPayments,     setPropPayments]      = useState([])
   const [propExpenses,     setPropExpenses]      = useState([])
   const [propLoading,      setPropLoading]       = useState(false)
+  const [isMobile,         setIsMobile]          = useState(window.innerWidth <= 768)
 
   const primaryColor = agency?.primary_color || '#d4a853'
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   useEffect(() => {
     Promise.all([
@@ -98,7 +105,7 @@ export default function OwnerDashboardPage() {
       {/* Header */}
       <header style={{
         background: '#161920', borderBottom: '1px solid rgba(255,255,255,0.07)',
-        padding: '0 2rem', height: '64px',
+        padding: isMobile ? '0 1rem' : '0 2rem', height: '64px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         position: 'sticky', top: 0, zIndex: 50,
       }}>
@@ -111,30 +118,35 @@ export default function OwnerDashboardPage() {
               {agency?.name || 'Lokimmo'}
             </div>
           )}
-          <div style={{
-            background: `${primaryColor}15`, border: `1px solid ${primaryColor}30`,
-            borderRadius: '20px', padding: '2px 10px',
-            fontSize: '0.72rem', color: primaryColor,
-            display: 'flex', alignItems: 'center', gap: '5px',
-          }}>
-            <Building2 size={11} /> Espace Propriétaire
-          </div>
+          {!isMobile && (
+            <div style={{
+              background: `${primaryColor}15`, border: `1px solid ${primaryColor}30`,
+              borderRadius: '20px', padding: '2px 10px',
+              fontSize: '0.72rem', color: primaryColor,
+              display: 'flex', alignItems: 'center', gap: '5px',
+            }}>
+              <Building2 size={11} /> Espace Propriétaire
+            </div>
+          )}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ fontSize: '0.875rem', color: '#8b8d96' }}>
-            {owner?.first_name} {owner?.last_name}
-          </div>
+          {!isMobile && (
+            <div style={{ fontSize: '0.875rem', color: '#8b8d96' }}>
+              {owner?.first_name} {owner?.last_name}
+            </div>
+          )}
           <button
             onClick={logout}
             style={{
               background: 'transparent', border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: '8px', padding: '6px 12px',
+              borderRadius: '8px', padding: isMobile ? '6px' : '6px 12px',
               color: '#8b8d96', fontSize: '0.8rem', cursor: 'pointer',
               display: 'flex', alignItems: 'center', gap: '6px',
             }}
+            title="Déconnexion"
           >
-            <LogOut size={14} /> Déconnexion
+            <LogOut size={14} /> {!isMobile && 'Déconnexion'}
           </button>
         </div>
       </header>
@@ -142,14 +154,20 @@ export default function OwnerDashboardPage() {
       <div style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem 1rem' }}>
 
         {/* Tabs */}
-        <div style={{
-          display: 'flex', gap: '4px',
-          background: '#161920', borderRadius: '10px', padding: '4px',
-          marginBottom: '2rem', border: '1px solid rgba(255,255,255,0.07)',
-        }}>
+        <div 
+          className="lk-scrollbar-hidden"
+          style={{
+            display: 'flex', gap: '4px',
+            background: '#161920', borderRadius: '10px', padding: '4px',
+            marginBottom: '2rem', border: '1px solid rgba(255,255,255,0.07)',
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
           {TABS.map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
-              flex: 1, padding: '0.5rem',
+              flex: isMobile ? '0 0 auto' : 1,
+              padding: isMobile ? '0.5rem 1rem' : '0.5rem',
               background:   activeTab === tab.id ? `${primaryColor}20` : 'transparent',
               border:       `1px solid ${activeTab === tab.id ? `${primaryColor}40` : 'transparent'}`,
               borderRadius: '8px',
@@ -402,45 +420,47 @@ export default function OwnerDashboardPage() {
                       Aucun paiement enregistré
                     </div>
                   ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
-                      <thead>
-                        <tr style={{ background: '#13171f', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                          {['Locataire', 'Période', 'Montant dû', 'Montant payé', 'Statut'].map(h => (
-                            <th key={h} style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.68rem', color: '#555761', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {propPayments.map((p, i) => (
-                          <tr key={i}
-                            style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
-                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
-                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                          >
-                            <td style={{ padding: '0.75rem 1rem' }}>{p.tenant_name || '—'}</td>
-                            <td style={{ padding: '0.75rem 1rem', color: '#8b8d96' }}>
-                              {MONTHS[(p.period_month || 1) - 1]} {p.period_year}
-                            </td>
-                            <td style={{ padding: '0.75rem 1rem', color: '#8b8d96' }}>
-                              {formatCurrency(p.amount_due)}
-                            </td>
-                            <td style={{ padding: '0.75rem 1rem', color: '#3ecf8e', fontWeight: 500 }}>
-                              {formatCurrency(p.amount_paid)}
-                            </td>
-                            <td style={{ padding: '0.75rem 1rem' }}>
-                              <span style={{
-                                fontSize: '0.72rem', fontWeight: 500,
-                                color:      PAY_STATUS[p.status]?.color,
-                                background: `${PAY_STATUS[p.status]?.color}15`,
-                                borderRadius: '20px', padding: '2px 8px',
-                              }}>
-                                {PAY_STATUS[p.status]?.label}
-                              </span>
-                            </td>
+                    <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                      <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                        <thead>
+                          <tr style={{ background: '#13171f', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                            {['Locataire', 'Période', 'Montant dû', 'Montant payé', 'Statut'].map(h => (
+                              <th key={h} style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.68rem', color: '#555761', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
+                            ))}
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {propPayments.map((p, i) => (
+                            <tr key={i}
+                              style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
+                              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                            >
+                              <td style={{ padding: '0.75rem 1rem' }}>{p.tenant_name || '—'}</td>
+                              <td style={{ padding: '0.75rem 1rem', color: '#8b8d96' }}>
+                                {MONTHS[(p.period_month || 1) - 1]} {p.period_year}
+                              </td>
+                              <td style={{ padding: '0.75rem 1rem', color: '#8b8d96' }}>
+                                {formatCurrency(p.amount_due)}
+                              </td>
+                              <td style={{ padding: '0.75rem 1rem', color: '#3ecf8e', fontWeight: 500 }}>
+                                {formatCurrency(p.amount_paid)}
+                              </td>
+                              <td style={{ padding: '0.75rem 1rem' }}>
+                                <span style={{
+                                  fontSize: '0.72rem', fontWeight: 500,
+                                  color:      PAY_STATUS[p.status]?.color,
+                                  background: `${PAY_STATUS[p.status]?.color}15`,
+                                  borderRadius: '20px', padding: '2px 8px',
+                                }}>
+                                  {PAY_STATUS[p.status]?.label}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   )}
                 </div>
 
@@ -461,35 +481,37 @@ export default function OwnerDashboardPage() {
                       Aucune dépense enregistrée
                     </div>
                   ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
-                      <thead>
-                        <tr style={{ background: '#13171f', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                          {['Titre', 'Catégorie', 'Montant', 'Date'].map(h => (
-                            <th key={h} style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.68rem', color: '#555761', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {propExpenses.map((e, i) => (
-                          <tr key={i}
-                            style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
-                            onMouseEnter={ev => ev.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
-                            onMouseLeave={ev => ev.currentTarget.style.background = 'transparent'}
-                          >
-                            <td style={{ padding: '0.75rem 1rem', fontWeight: 500 }}>{e.title}</td>
-                            <td style={{ padding: '0.75rem 1rem', color: '#8b8d96' }}>
-                              {CATEGORY_LABELS[e.category] || e.category}
-                            </td>
-                            <td style={{ padding: '0.75rem 1rem', color: '#e5534b', fontWeight: 500 }}>
-                              {formatCurrency(e.amount)}
-                            </td>
-                            <td style={{ padding: '0.75rem 1rem', color: '#8b8d96', fontSize: '0.75rem' }}>
-                              {formatDate(e.expense_date)}
-                            </td>
+                    <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                      <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                        <thead>
+                          <tr style={{ background: '#13171f', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                            {['Titre', 'Catégorie', 'Montant', 'Date'].map(h => (
+                              <th key={h} style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.68rem', color: '#555761', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
+                            ))}
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {propExpenses.map((e, i) => (
+                            <tr key={i}
+                              style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                              onMouseEnter={ev => ev.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
+                              onMouseLeave={ev => ev.currentTarget.style.background = 'transparent'}
+                            >
+                              <td style={{ padding: '0.75rem 1rem', fontWeight: 500 }}>{e.title}</td>
+                              <td style={{ padding: '0.75rem 1rem', color: '#8b8d96' }}>
+                                {CATEGORY_LABELS[e.category] || e.category}
+                              </td>
+                              <td style={{ padding: '0.75rem 1rem', color: '#e5534b', fontWeight: 500 }}>
+                                {formatCurrency(e.amount)}
+                              </td>
+                              <td style={{ padding: '0.75rem 1rem', color: '#8b8d96', fontSize: '0.75rem' }}>
+                                {formatDate(e.expense_date)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   )}
                 </div>
               </>
@@ -566,47 +588,49 @@ export default function OwnerDashboardPage() {
               }}>
                 <Home size={15} color={primaryColor} /> Bilan par bien
               </div>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
-                <thead>
-                  <tr style={{ background: '#13171f', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                    {['Bien', 'Revenus', 'Dépenses', 'Net', 'Statut'].map(h => (
-                      <th key={h} style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.68rem', color: '#555761', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {properties.map((p, i) => {
-                    const net = (p.total_revenue || 0) - (p.total_expenses || 0)
-                    return (
-                      <tr key={i}
-                        style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer' }}
-                        onClick={() => loadPropertyDetail(p)}
-                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                      >
-                        <td style={{ padding: '0.85rem 1rem', fontWeight: 500 }}>
-                          {p.title}
-                          <div style={{ fontSize: '0.72rem', color: '#8b8d96' }}>{p.city}</div>
-                        </td>
-                        <td style={{ padding: '0.85rem 1rem', color: '#3ecf8e' }}>{formatCurrency(p.total_revenue)}</td>
-                        <td style={{ padding: '0.85rem 1rem', color: '#e5534b' }}>{formatCurrency(p.total_expenses)}</td>
-                        <td style={{ padding: '0.85rem 1rem', color: net >= 0 ? primaryColor : '#e5534b', fontWeight: 500 }}>
-                          {formatCurrency(net)}
-                        </td>
-                        <td style={{ padding: '0.85rem 1rem' }}>
-                          <span style={{
-                            fontSize: '0.72rem', color: STATUS_LABELS[p.status]?.color,
-                            background: `${STATUS_LABELS[p.status]?.color}15`,
-                            borderRadius: '20px', padding: '2px 8px',
-                          }}>
-                            {STATUS_LABELS[p.status]?.label}
-                          </span>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+              <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                  <thead>
+                    <tr style={{ background: '#13171f', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                      {['Bien', 'Revenus', 'Dépenses', 'Net', 'Statut'].map(h => (
+                        <th key={h} style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.68rem', color: '#555761', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {properties.map((p, i) => {
+                      const net = (p.total_revenue || 0) - (p.total_expenses || 0)
+                      return (
+                        <tr key={i}
+                          style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer' }}
+                          onClick={() => loadPropertyDetail(p)}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <td style={{ padding: '0.85rem 1rem', fontWeight: 500 }}>
+                            {p.title}
+                            <div style={{ fontSize: '0.72rem', color: '#8b8d96' }}>{p.city}</div>
+                          </td>
+                          <td style={{ padding: '0.85rem 1rem', color: '#3ecf8e' }}>{formatCurrency(p.total_revenue)}</td>
+                          <td style={{ padding: '0.85rem 1rem', color: '#e5534b' }}>{formatCurrency(p.total_expenses)}</td>
+                          <td style={{ padding: '0.85rem 1rem', color: net >= 0 ? primaryColor : '#e5534b', fontWeight: 500 }}>
+                            {formatCurrency(net)}
+                          </td>
+                          <td style={{ padding: '0.85rem 1rem' }}>
+                            <span style={{
+                              fontSize: '0.72rem', color: STATUS_LABELS[p.status]?.color,
+                              background: `${STATUS_LABELS[p.status]?.color}15`,
+                              borderRadius: '20px', padding: '2px 8px',
+                            }}>
+                              {STATUS_LABELS[p.status]?.label}
+                            </span>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}

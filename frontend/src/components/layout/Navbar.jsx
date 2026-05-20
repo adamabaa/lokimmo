@@ -29,7 +29,7 @@ export default function Navbar({ title, subtitle, onMenuClick, isMobile }) {
       display:             'flex',
       alignItems:          'center',
       justifyContent:      'space-between',
-      padding:             '0 2rem',
+      padding:             isMobile ? '0 1rem' : '0 2rem',
       position:            'sticky',
       top:                 0,
       zIndex:              50,
@@ -62,20 +62,22 @@ export default function Navbar({ title, subtitle, onMenuClick, isMobile }) {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
         {/* Indicateur agence */}
-        <div style={{
-          display:      'flex',
-          alignItems:   'center',
-          gap:          '6px',
-          background:   'var(--lk-dark-3)',
-          border:       '1px solid var(--lk-border-2)',
-          borderRadius: 'var(--radius-md)',
-          padding:      '0.35rem 0.85rem',
-          fontSize:     '0.8rem',
-          color:        'var(--lk-text-secondary)',
-        }}>
-          <Settings size={13} style={{ color: 'var(--lk-amber)' }} />
-          {slug}
-        </div>
+        {!isMobile && (
+          <div style={{
+            display:      'flex',
+            alignItems:   'center',
+            gap:          '6px',
+            background:   'var(--lk-dark-3)',
+            border:       '1px solid var(--lk-border-2)',
+            borderRadius: 'var(--radius-md)',
+            padding:      '0.35rem 0.85rem',
+            fontSize:     '0.8rem',
+            color:        'var(--lk-text-secondary)',
+          }}>
+            <Settings size={13} style={{ color: 'var(--lk-amber)' }} />
+            {slug}
+          </div>
+        )}
 
         {/* Cloche notifications */}
         <NotificationBell />

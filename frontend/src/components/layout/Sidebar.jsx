@@ -141,6 +141,9 @@ export default function Sidebar({ isOpen, onClose, isMobile }) {
             <NavLink
               key={item.path}
               to={item.path}
+              onClick={() => {
+                if (isMobile && onClose) onClose()
+              }}
               style={{
                 display:        'flex',
                 alignItems:     'center',
