@@ -8,11 +8,6 @@ export default function DashboardLayout({ children, title, subtitle }) {
   const [isMobile, setIsMobile]           = useState(window.innerWidth <= 1024)
   const location                          = useLocation()
 
-  // Fermer le menu à chaque changement de route
-  useEffect(() => {
-    setIsSidebarOpen(false)
-  }, [location.pathname])
-
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth <= 1024
