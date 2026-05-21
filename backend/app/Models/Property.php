@@ -69,57 +69,48 @@ class Property extends BaseModel
         return $stmt->rowCount() > 0;
     }
 
-    /**
-     * Liste les biens avec le nom du propriétaire
-     */
     public function findAllWithOwner(int $agencyId): array
     {
         $stmt = $this->db->prepare(
-            'SELECT p.*,
-                    CONCAT(o.first_name, " ", o.last_name) AS owner_name
+            "SELECT p.*,
+                    CONCAT(o.first_name, ' ', o.last_name) AS owner_name
              FROM properties p
              LEFT JOIN owners o ON o.id = p.owner_id
              WHERE p.agency_id = ?
                AND p.deleted_at IS NULL
-             ORDER BY p.created_at DESC'
+             ORDER BY p.created_at DESC"
         );
         $stmt->execute([$agencyId]);
         return $stmt->fetchAll();
     }
 
-    /**
-     * Biens disponibles uniquement
-     */
     public function findAvailable(int $agencyId): array
     {
         $stmt = $this->db->prepare(
-            'SELECT p.*,
-                    CONCAT(o.first_name, " ", o.last_name) AS owner_name
+            "SELECT p.*,
+                    CONCAT(o.first_name, ' ', o.last_name) AS owner_name
              FROM properties p
              LEFT JOIN owners o ON o.id = p.owner_id
              WHERE p.agency_id = ?
                AND p.status = 'available'
                AND p.deleted_at IS NULL
-             ORDER BY p.created_at DESC'
+             ORDER BY p.created_at DESC"
         );
         $stmt->execute([$agencyId]);
         return $stmt->fetchAll();
     }
 
-    /**
-     * Stats pour le dashboard
-     */
     public function getStatsByAgency(int $agencyId): array
     {
         $stmt = $this->db->prepare(
-            'SELECT
+            "SELECT
                 COUNT(*) as total,
                 SUM(status = 'available')   as available,
                 SUM(status = 'rented')      as rented,
                 SUM(status = 'maintenance') as maintenance
              FROM properties
              WHERE agency_id = ?
-               AND deleted_at IS NULL'
+               AND deleted_at IS NULL"
         );
         $stmt->execute([$agencyId]);
         return $stmt->fetch();

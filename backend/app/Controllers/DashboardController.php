@@ -38,20 +38,20 @@ class DashboardController extends BaseController
 
         // Payment counts
         $stmt = $this->db->prepare(
-            'SELECT
+            "SELECT
                 SUM(CASE WHEN status = 'paid'    THEN 1 ELSE 0 END) as paid,
                 SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
                 SUM(CASE WHEN status = 'late'    THEN 1 ELSE 0 END) as late,
                 SUM(CASE WHEN status = 'partial' THEN 1 ELSE 0 END) as partial
              FROM payments
-             WHERE agency_id = ? AND deleted_at IS NULL'
+             WHERE agency_id = ? AND deleted_at IS NULL"
         );
         $stmt->execute([$agencyId]);
         $paymentCounts = $stmt->fetch() ?: [];
 
         // Revenus par mois (8 derniers mois)
         $stmt = $this->db->prepare(
-            'SELECT MONTH(payment_date) as month,
+            "SELECT MONTH(payment_date) as month,
                     YEAR(payment_date)  as year,
                     SUM(amount_paid)    as total
              FROM payments
@@ -60,7 +60,7 @@ class DashboardController extends BaseController
                AND payment_date >= DATE_SUB(NOW(), INTERVAL 8 MONTH)
                AND deleted_at IS NULL
              GROUP BY YEAR(payment_date), MONTH(payment_date)
-             ORDER BY year ASC, month ASC'
+             ORDER BY year ASC, month ASC"
         );
         $stmt->execute([$agencyId]);
         $revenueByMonth = $stmt->fetchAll();

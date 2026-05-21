@@ -59,47 +59,39 @@ class Payment extends BaseModel
         return $stmt->rowCount() > 0;
     }
 
-    /**
-     * Liste les paiements avec les détails du contrat
-     */
-// Retourne le nombre total de paiements
     public function countAll(int $agencyId): int
     {
         $stmt = $this->db->prepare(
-            'SELECT COUNT(*) FROM payments 
-            WHERE agency_id = ? AND deleted_at IS NULL'
+            'SELECT COUNT(*) FROM payments
+             WHERE agency_id = ? AND deleted_at IS NULL'
         );
         $stmt->execute([$agencyId]);
         return (int) $stmt->fetchColumn();
     }
 
-    // Retourne les paiements paginés
     public function findAllWithDetails(int $agencyId, int $limit = 25, int $offset = 0): array
     {
         $stmt = $this->db->prepare(
-            'SELECT py.*,
-                    CONCAT(t.first_name, " ", t.last_name) AS tenant_name,
+            "SELECT py.*,
+                    CONCAT(t.first_name, ' ', t.last_name) AS tenant_name,
                     p.title                                 AS property_title
-            FROM payments py
-            LEFT JOIN contracts c  ON c.id  = py.contract_id
-            LEFT JOIN tenants   t  ON t.id  = c.tenant_id
-            LEFT JOIN properties p ON p.id  = c.property_id
-            WHERE py.agency_id = ? AND py.deleted_at IS NULL
-            ORDER BY py.due_date DESC
-            LIMIT ? OFFSET ?'
+             FROM payments py
+             LEFT JOIN contracts  c ON c.id = py.contract_id
+             LEFT JOIN tenants    t ON t.id = c.tenant_id
+             LEFT JOIN properties p ON p.id = c.property_id
+             WHERE py.agency_id = ? AND py.deleted_at IS NULL
+             ORDER BY py.due_date DESC
+             LIMIT ? OFFSET ?"
         );
         $stmt->execute([$agencyId, $limit, $offset]);
         return $stmt->fetchAll();
     }
 
-    /**
-     * Paiements en retard
-     */
     public function findLate(int $agencyId): array
     {
         $stmt = $this->db->prepare(
-            'SELECT py.*,
-                    CONCAT(t.first_name, " ", t.last_name) AS tenant_name,
+            "SELECT py.*,
+                    CONCAT(t.first_name, ' ', t.last_name) AS tenant_name,
                     p.title                                 AS property_title,
                     t.phone                                 AS tenant_phone
              FROM payments py
@@ -107,29 +99,23 @@ class Payment extends BaseModel
              LEFT JOIN tenants    t ON t.id = c.tenant_id
              LEFT JOIN properties p ON p.id = c.property_id
              WHERE py.agency_id = ?
-               AND py.status IN ("pending", "partial")
+               AND py.status IN ('pending', 'partial')
                AND py.due_date < CURDATE()
-             ORDER BY py.due_date ASC'
+             ORDER BY py.due_date ASC"
         );
         $stmt->execute([$agencyId]);
         return $stmt->fetchAll();
     }
 
-    /**
-     * Total encaissé sur un mois
-     */
-    public function getTotalByMonth(
-        int $agencyId,
-        int $month,
-        int $year
-    ): float {
+    public function getTotalByMonth(int $agencyId, int $month, int $year): float
+    {
         $stmt = $this->db->prepare(
-            'SELECT COALESCE(SUM(amount_paid), 0)
+            "SELECT COALESCE(SUM(amount_paid), 0)
              FROM payments
              WHERE agency_id    = ?
                AND period_month = ?
                AND period_year  = ?
-               AND status       = 'paid''
+               AND status       = 'paid'"
         );
         $stmt->execute([$agencyId, $month, $year]);
         return (float) $stmt->fetchColumn();

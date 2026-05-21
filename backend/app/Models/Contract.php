@@ -60,57 +60,47 @@ class Contract extends BaseModel
         return $stmt->rowCount() > 0;
     }
 
-    /**
-     * Liste les contrats avec les infos bien + locataire
-     */
     public function findAllWithDetails(int $agencyId): array
     {
         $stmt = $this->db->prepare(
-            'SELECT c.*,
+            "SELECT c.*,
                     p.title                                    AS property_title,
                     p.address                                  AS property_address,
-                    CONCAT(t.first_name, " ", t.last_name)    AS tenant_name,
+                    CONCAT(t.first_name, ' ', t.last_name)    AS tenant_name,
                     t.phone                                    AS tenant_phone
              FROM contracts c
              LEFT JOIN properties p ON p.id = c.property_id
              LEFT JOIN tenants    t ON t.id = c.tenant_id
              WHERE c.agency_id = ?
                AND c.deleted_at IS NULL
-             ORDER BY c.created_at DESC'
+             ORDER BY c.created_at DESC"
         );
         $stmt->execute([$agencyId]);
         return $stmt->fetchAll();
     }
 
-    /**
-     * Contrats actifs uniquement
-     */
     public function findActive(int $agencyId): array
     {
         $stmt = $this->db->prepare(
-            'SELECT c.*,
+            "SELECT c.*,
                     p.title                                 AS property_title,
-                    CONCAT(t.first_name, " ", t.last_name) AS tenant_name
+                    CONCAT(t.first_name, ' ', t.last_name) AS tenant_name
              FROM contracts c
              LEFT JOIN properties p ON p.id = c.property_id
              LEFT JOIN tenants    t ON t.id = c.tenant_id
              WHERE c.agency_id = ?
                AND c.status = 'active'
                AND c.deleted_at IS NULL
-             ORDER BY c.start_date DESC'
+             ORDER BY c.start_date DESC"
         );
         $stmt->execute([$agencyId]);
         return $stmt->fetchAll();
     }
 
-    /**
-     * Met à jour le statut d'un bien quand un contrat est créé
-     */
     public function markPropertyAsRented(int $propertyId): void
     {
-        $stmt = $this->db->prepare(
-            'UPDATE properties SET status = 'rented' WHERE id = ?'
-        );
-        $stmt->execute([$propertyId]);
+        $this->db->prepare(
+            "UPDATE properties SET status = 'rented' WHERE id = ?"
+        )->execute([$propertyId]);
     }
 }
