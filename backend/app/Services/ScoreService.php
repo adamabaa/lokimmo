@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 declare(strict_types=1);
 
@@ -106,9 +106,9 @@ private function scorePaymentHistory(int $tenantId, int $agencyId): int
         $stmt = $this->db->prepare(
             'SELECT
                 COUNT(*) as total,
-                SUM(CASE WHEN py.status = "paid"    THEN 1 ELSE 0 END) as paid,
-                SUM(CASE WHEN py.status = "late"    THEN 1 ELSE 0 END) as late,
-                SUM(CASE WHEN py.status = "partial" THEN 1 ELSE 0 END) as partial
+                SUM(CASE WHEN py.status = 'paid'    THEN 1 ELSE 0 END) as paid,
+                SUM(CASE WHEN py.status = 'late'    THEN 1 ELSE 0 END) as late,
+                SUM(CASE WHEN py.status = 'partial' THEN 1 ELSE 0 END) as partial
             FROM payments py
             LEFT JOIN contracts c ON c.id = py.contract_id
             WHERE c.tenant_id = ? AND py.agency_id = ?'
@@ -144,7 +144,7 @@ private function scorePaymentHistory(int $tenantId, int $agencyId): int
             'SELECT t.monthly_income, c.rent_amount
              FROM tenants t
              LEFT JOIN contracts c ON c.tenant_id = t.id
-               AND c.agency_id = ? AND c.status = "active"
+               AND c.agency_id = ? AND c.status = 'active'
              WHERE t.id = ? AND t.agency_id = ?
              LIMIT 1'
         );
@@ -176,7 +176,7 @@ private function scorePunctuality(int $tenantId, int $agencyId): int
             'SELECT
                 COUNT(*) as total,
                 SUM(CASE
-                    WHEN py.status = "paid"
+                    WHEN py.status = 'paid'
                     AND py.payment_date IS NOT NULL
                     AND py.payment_date <= py.due_date
                     THEN 1 ELSE 0
@@ -184,7 +184,7 @@ private function scorePunctuality(int $tenantId, int $agencyId): int
             FROM payments py
             LEFT JOIN contracts c ON c.id = py.contract_id
             WHERE c.tenant_id = ? AND py.agency_id = ?
-            AND py.status = "paid"'
+            AND py.status = 'paid''
         );
         $stmt->execute([$tenantId, $agencyId]);
         $data = $stmt->fetch() ?: [];
@@ -214,7 +214,7 @@ private function scorePunctuality(int $tenantId, int $agencyId): int
             'SELECT TIMESTAMPDIFF(MONTH, start_date, NOW()) as months
             FROM contracts
             WHERE tenant_id = ? AND agency_id = ?
-            AND status = "active"
+            AND status = 'active'
             ORDER BY start_date ASC LIMIT 1'
         );
         $stmt->execute([$tenantId, $agencyId]);

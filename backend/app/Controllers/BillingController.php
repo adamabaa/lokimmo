@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 declare(strict_types=1);
 
@@ -79,7 +79,7 @@ class BillingController extends BaseController
                     COUNT(s.id) as subscriber_count
              FROM subscription_plans p
              LEFT JOIN agency_subscriptions s ON s.plan_id = p.id
-               AND s.status = "active"
+               AND s.status = 'active'
              GROUP BY p.id
              ORDER BY p.price ASC'
         );
@@ -217,12 +217,12 @@ class BillingController extends BaseController
 
         // Revenus par mois
         $stmt = $this->db->prepare(
-            'SELECT DATE_FORMAT(created_at, "%Y-%m") as month,
+            'SELECT DATE_FORMAT(created_at, '%Y-%m') as month,
                     COUNT(*) as count,
                     SUM(amount) as total
             FROM invoices
-            WHERE status = "paid"
-            GROUP BY DATE_FORMAT(created_at, "%Y-%m")
+            WHERE status = 'paid'
+            GROUP BY DATE_FORMAT(created_at, '%Y-%m')
             ORDER BY month ASC
             LIMIT 6'
         );
@@ -231,7 +231,7 @@ class BillingController extends BaseController
 
         // Total revenus
         $stmt = $this->db->prepare(
-            'SELECT COALESCE(SUM(amount), 0) FROM invoices WHERE status = "paid"'
+            'SELECT COALESCE(SUM(amount), 0) FROM invoices WHERE status = 'paid''
         );
         $stmt->execute();
         $totalRevenue = (float) $stmt->fetchColumn();

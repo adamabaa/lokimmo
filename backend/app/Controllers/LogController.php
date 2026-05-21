@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 declare(strict_types=1);
 
@@ -113,7 +113,7 @@ class LogController extends BaseController
         $stmt = $this->db->prepare(
             'SELECT DATE(created_at) as date, COUNT(*) as count
              FROM activity_logs
-             WHERE action = "login"
+             WHERE action = 'login'
                AND created_at > DATE_SUB(NOW(), INTERVAL 7 DAY)
              GROUP BY DATE(created_at)
              ORDER BY date ASC'

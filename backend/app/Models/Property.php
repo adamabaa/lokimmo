@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 declare(strict_types=1);
 
@@ -98,7 +98,7 @@ class Property extends BaseModel
              FROM properties p
              LEFT JOIN owners o ON o.id = p.owner_id
              WHERE p.agency_id = ?
-               AND p.status = "available"
+               AND p.status = 'available'
                AND p.deleted_at IS NULL
              ORDER BY p.created_at DESC'
         );
@@ -114,9 +114,9 @@ class Property extends BaseModel
         $stmt = $this->db->prepare(
             'SELECT
                 COUNT(*) as total,
-                SUM(status = "available")   as available,
-                SUM(status = "rented")      as rented,
-                SUM(status = "maintenance") as maintenance
+                SUM(status = 'available')   as available,
+                SUM(status = 'rented')      as rented,
+                SUM(status = 'maintenance') as maintenance
              FROM properties
              WHERE agency_id = ?
                AND deleted_at IS NULL'

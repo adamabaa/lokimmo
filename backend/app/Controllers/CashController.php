@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 declare(strict_types=1);
 
@@ -35,13 +35,13 @@ class CashController extends BaseController
                     u.first_name, u.last_name,
                     COALESCE((
                         SELECT SUM(amount) FROM cash_operations
-                        WHERE session_id = s.id AND type = "income"
-                          AND status = "validated"
+                        WHERE session_id = s.id AND type = 'income'
+                          AND status = 'validated'
                     ), 0) AS total_income,
                     COALESCE((
                         SELECT SUM(amount) FROM cash_operations
-                        WHERE session_id = s.id AND type = "expense"
-                          AND status = "validated"
+                        WHERE session_id = s.id AND type = 'expense'
+                          AND status = 'validated'
                     ), 0) AS total_expense
              FROM cash_sessions s
              LEFT JOIN users u ON u.id = s.user_id
@@ -115,7 +115,7 @@ class CashController extends BaseController
 
         $stmt = $this->db->prepare(
             'SELECT * FROM cash_sessions
-             WHERE id = ? AND agency_id = ? AND status = "open" LIMIT 1'
+             WHERE id = ? AND agency_id = ? AND status = 'open' LIMIT 1'
         );
         $stmt->execute([$id, $request->agencyId]);
         $session = $stmt->fetch();
@@ -130,7 +130,7 @@ class CashController extends BaseController
                 COALESCE(SUM(CASE WHEN type="income"  THEN amount ELSE 0 END), 0) as income,
                 COALESCE(SUM(CASE WHEN type="expense" THEN amount ELSE 0 END), 0) as expense
              FROM cash_operations
-             WHERE session_id = ? AND status = "validated"'
+             WHERE session_id = ? AND status = 'validated''
         );
         $stmt2->execute([$id]);
         $totals = $stmt2->fetch();
@@ -141,7 +141,7 @@ class CashController extends BaseController
 
         $this->db->prepare(
             'UPDATE cash_sessions
-             SET status = "closed",
+             SET status = 'closed',
                  closing_balance = ?,
                  notes = ?,
                  closed_at = NOW()
@@ -180,13 +180,13 @@ class CashController extends BaseController
                           u.role AS cashier_role,
                           COALESCE((
                               SELECT SUM(amount) FROM cash_operations
-                              WHERE session_id = s.id AND type = "income"
-                                AND status = "validated"
+                              WHERE session_id = s.id AND type = 'income'
+                                AND status = 'validated'
                           ), 0) AS total_income,
                           COALESCE((
                               SELECT SUM(amount) FROM cash_operations
-                              WHERE session_id = s.id AND type = "expense"
-                                AND status = "validated"
+                              WHERE session_id = s.id AND type = 'expense'
+                                AND status = 'validated'
                           ), 0) AS total_expense
                    FROM cash_sessions s
                    LEFT JOIN users u ON u.id = s.user_id
@@ -273,7 +273,7 @@ class CashController extends BaseController
         $stmt = $this->db->prepare(
             'SELECT id FROM cash_sessions
              WHERE agency_id = ? AND user_id = ?
-               AND date = CURDATE() AND status = "open"
+               AND date = CURDATE() AND status = 'open'
              LIMIT 1'
         );
         $stmt->execute([$request->agencyId, $user['id']]);
@@ -338,10 +338,10 @@ class CashController extends BaseController
 
         $this->db->prepare(
             'UPDATE cash_operations
-             SET status = "validated",
+             SET status = 'validated',
                  validated_by = ?,
                  validated_at = NOW()
-             WHERE id = ? AND agency_id = ? AND status = "pending"'
+             WHERE id = ? AND agency_id = ? AND status = 'pending''
         )->execute([$user['id'], $id, $request->agencyId]);
 
         LogService::log(
@@ -367,8 +367,8 @@ class CashController extends BaseController
 
         $this->db->prepare(
             'UPDATE cash_operations
-             SET status = "rejected"
-             WHERE id = ? AND agency_id = ? AND status = "pending"'
+             SET status = 'rejected'
+             WHERE id = ? AND agency_id = ? AND status = 'pending''
         )->execute([$id, $request->agencyId]);
 
         Response::json(null, 'Opération rejetée');
@@ -422,7 +422,7 @@ class CashController extends BaseController
         if ($isPrincipal) {
             $stmt3 = $this->db->prepare(
                 'SELECT COUNT(*) FROM cash_operations
-                 WHERE agency_id = ? AND status = "pending"'
+                 WHERE agency_id = ? AND status = 'pending''
             );
             $stmt3->execute([$request->agencyId]);
             $pending = (int) $stmt3->fetchColumn();
@@ -457,7 +457,7 @@ class CashController extends BaseController
                    LEFT JOIN tenants    t ON t.id = o.tenant_id
                    WHERE o.agency_id = ?
                      AND DATE(o.created_at) = ?
-                     AND o.status = "validated"';
+                     AND o.status = 'validated'';
         $params_arr = [$request->agencyId, $date];
 
         if (!$isPrincipal) {

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 declare(strict_types=1);
 
@@ -129,7 +129,7 @@ class Payment extends BaseModel
              WHERE agency_id    = ?
                AND period_month = ?
                AND period_year  = ?
-               AND status       = "paid"'
+               AND status       = 'paid''
         );
         $stmt->execute([$agencyId, $month, $year]);
         return (float) $stmt->fetchColumn();

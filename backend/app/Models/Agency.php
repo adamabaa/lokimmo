@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 declare(strict_types=1);
 
@@ -64,7 +64,7 @@ class Agency
              FROM agencies a
              LEFT JOIN users      u ON u.agency_id = a.id AND u.deleted_at IS NULL
              LEFT JOIN properties p ON p.agency_id = a.id AND p.deleted_at IS NULL
-             LEFT JOIN contracts  c ON c.agency_id = a.id AND c.status = "active"
+             LEFT JOIN contracts  c ON c.agency_id = a.id AND c.status = 'active'
              GROUP BY a.id
              ORDER BY a.created_at DESC'
         );
@@ -132,10 +132,10 @@ class Agency
                 (SELECT COUNT(*) FROM properties
                   WHERE deleted_at IS NULL)         AS total_properties,
                 (SELECT COUNT(*) FROM contracts
-                  WHERE status = "active")          AS total_contracts,
+                  WHERE status = 'active')          AS total_contracts,
                 (SELECT COALESCE(SUM(amount_paid),0)
                   FROM payments
-                  WHERE status = "paid"
+                  WHERE status = 'paid'
                     AND period_year = YEAR(NOW()))  AS annual_revenue
              FROM agencies'
         );

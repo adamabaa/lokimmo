@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 declare(strict_types=1);
 
@@ -39,10 +39,10 @@ class DashboardController extends BaseController
         // Payment counts
         $stmt = $this->db->prepare(
             'SELECT
-                SUM(CASE WHEN status = "paid"    THEN 1 ELSE 0 END) as paid,
-                SUM(CASE WHEN status = "pending" THEN 1 ELSE 0 END) as pending,
-                SUM(CASE WHEN status = "late"    THEN 1 ELSE 0 END) as late,
-                SUM(CASE WHEN status = "partial" THEN 1 ELSE 0 END) as partial
+                SUM(CASE WHEN status = 'paid'    THEN 1 ELSE 0 END) as paid,
+                SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+                SUM(CASE WHEN status = 'late'    THEN 1 ELSE 0 END) as late,
+                SUM(CASE WHEN status = 'partial' THEN 1 ELSE 0 END) as partial
              FROM payments
              WHERE agency_id = ? AND deleted_at IS NULL'
         );
@@ -56,7 +56,7 @@ class DashboardController extends BaseController
                     SUM(amount_paid)    as total
              FROM payments
              WHERE agency_id = ?
-               AND status IN ("paid", "partial")
+               AND status IN ('paid', 'partial')
                AND payment_date >= DATE_SUB(NOW(), INTERVAL 8 MONTH)
                AND deleted_at IS NULL
              GROUP BY YEAR(payment_date), MONTH(payment_date)

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 declare(strict_types=1);
 
@@ -95,7 +95,7 @@ class Contract extends BaseModel
              LEFT JOIN properties p ON p.id = c.property_id
              LEFT JOIN tenants    t ON t.id = c.tenant_id
              WHERE c.agency_id = ?
-               AND c.status = "active"
+               AND c.status = 'active'
                AND c.deleted_at IS NULL
              ORDER BY c.start_date DESC'
         );
@@ -109,7 +109,7 @@ class Contract extends BaseModel
     public function markPropertyAsRented(int $propertyId): void
     {
         $stmt = $this->db->prepare(
-            'UPDATE properties SET status = "rented" WHERE id = ?'
+            'UPDATE properties SET status = 'rented' WHERE id = ?'
         );
         $stmt->execute([$propertyId]);
     }
