@@ -19,7 +19,7 @@ class NotificationController extends BaseController
 
     /**
      * GET /api/notifications
-     * Liste les notifications de l'utilisateur connecté
+     * Liste les notifications de l'utilisateur connectÃ©
      */
     public function index(Request $request): void
     {
@@ -89,8 +89,8 @@ class NotificationController extends BaseController
 
     /**
      * GET /api/notifications/generate
-     * Génère les notifications automatiques
-     * Loyers en retard + Contrats expirant bientôt
+     * GÃ©nÃ¨re les notifications automatiques
+     * Loyers en retard + Contrats expirant bientÃ´t
      */
     public function generate(Request $request): void
     {
@@ -115,7 +115,7 @@ class NotificationController extends BaseController
         $latePayments = $stmt->fetchAll();
 
         foreach ($latePayments as $payment) {
-            $body = "Le loyer de {$payment['property_title']} (échéance : {$payment['due_date']}) n'a pas été réglé.";
+            $body = "Le loyer de {$payment['property_title']} (Ã©chÃ©ance : {$payment['due_date']}) n'a pas Ã©tÃ© rÃ©glÃ©.";
 
             if ($this->notificationExists($agencyId, 'payment_late', $body)) {
                 continue;
@@ -124,7 +124,7 @@ class NotificationController extends BaseController
             $this->createForAllUsers(
                 $agencyId,
                 'payment_late',
-                "Loyer en retard — {$payment['tenant_name']}",
+                "Loyer en retard â€” {$payment['tenant_name']}",
                 $body
             );
             $count++;
@@ -156,16 +156,16 @@ class NotificationController extends BaseController
             $this->createForAllUsers(
                 $agencyId,
                 'contract_expiring',
-                "Contrat expirant — {$contract['tenant_name']}",
+                "Contrat expirant â€” {$contract['tenant_name']}",
                 $body
             );
             $count++;
         }
 
-        Response::json(['generated' => $count], "{$count} notification(s) générée(s)");
+        Response::json(['generated' => $count], "{$count} notification(s) gÃ©nÃ©rÃ©e(s)");
     }
 
-    // ── Helpers privés ───────────────────────────────────────
+    // â”€â”€ Helpers privÃ©s â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private function notificationExists(
         int $agencyId,
@@ -187,7 +187,7 @@ class NotificationController extends BaseController
         string $title,
         string $body
     ): void {
-        // Récupérer tous les users actifs de l'agence
+        // RÃ©cupÃ©rer tous les users actifs de l'agence
         $stmt = $this->db->prepare(
             'SELECT id FROM users
              WHERE agency_id = ? AND is_active = 1 AND deleted_at IS NULL'

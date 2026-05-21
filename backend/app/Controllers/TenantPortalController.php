@@ -33,7 +33,7 @@ class TenantPortalController extends BaseController
         ]);
 
         if (!empty($errors)) {
-            Response::error('Données invalides', 422, $errors);
+            Response::error('DonnÃ©es invalides', 422, $errors);
         }
 
         // Chercher le locataire par email portail
@@ -59,14 +59,14 @@ class TenantPortalController extends BaseController
         }
 
         if (!(bool) $tenant['portal_active']) {
-            Response::forbidden('Votre accès au portail n\'est pas activé. Contactez votre agence.');
+            Response::forbidden('Votre accÃ¨s au portail n\'est pas activÃ©. Contactez votre agence.');
         }
 
         if (!password_verify($data['password'], $tenant['portal_password'])) {
             Response::unauthorized('Email ou mot de passe incorrect');
         }
 
-        // Mettre à jour la dernière connexion
+        // Mettre Ã  jour la derniÃ¨re connexion
         $this->db->prepare(
             'UPDATE tenants SET last_portal_login = NOW() WHERE id = ?'
         )->execute([$tenant['id']]);
@@ -84,12 +84,12 @@ class TenantPortalController extends BaseController
                 'last_name'  => $tenant['last_name'],
                 'email'      => $tenant['portal_email'] ?? $tenant['email'],
             ],
-        ], 'Connexion réussie');
+        ], 'Connexion rÃ©ussie');
     }
 
     /**
      * GET /api/portal/me
-     * Profil du locataire connecté
+     * Profil du locataire connectÃ©
      */
     public function me(Request $request): void
     {
@@ -147,7 +147,7 @@ class TenantPortalController extends BaseController
         $contract = $stmt->fetch();
 
         if (!$contract) {
-            Response::notFound('Aucun contrat actif trouvé');
+            Response::notFound('Aucun contrat actif trouvÃ©');
         }
 
         Response::json($contract);

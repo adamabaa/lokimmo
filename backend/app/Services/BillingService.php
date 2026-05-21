@@ -17,7 +17,7 @@ class BillingService
     }
 
     /**
-     * Vérifier si une agence peut ajouter un bien
+     * VÃ©rifier si une agence peut ajouter un bien
      */
     public function canAddProperty(int $agencyId): array
     {
@@ -25,7 +25,7 @@ class BillingService
         if (!$plan) return ['allowed' => true, 'reason' => ''];
 
         if ($plan['status'] === 'expired') {
-            return ['allowed' => false, 'reason' => 'Votre abonnement a expiré'];
+            return ['allowed' => false, 'reason' => 'Votre abonnement a expirÃ©'];
         }
 
         $count = $this->countResource($agencyId, 'properties');
@@ -33,7 +33,7 @@ class BillingService
         if ($count >= $plan['max_properties']) {
             return [
                 'allowed' => false,
-                'reason'  => "Limite atteinte ({$plan['max_properties']} biens max). Passez au plan supérieur.",
+                'reason'  => "Limite atteinte ({$plan['max_properties']} biens max). Passez au plan supÃ©rieur.",
                 'upgrade' => true,
             ];
         }
@@ -42,7 +42,7 @@ class BillingService
     }
 
     /**
-     * Vérifier si une agence peut ajouter un locataire
+     * VÃ©rifier si une agence peut ajouter un locataire
      */
     public function canAddTenant(int $agencyId): array
     {
@@ -54,7 +54,7 @@ class BillingService
         if ($count >= $plan['max_tenants']) {
             return [
                 'allowed' => false,
-                'reason'  => "Limite atteinte ({$plan['max_tenants']} locataires max). Passez au plan supérieur.",
+                'reason'  => "Limite atteinte ({$plan['max_tenants']} locataires max). Passez au plan supÃ©rieur.",
                 'upgrade' => true,
             ];
         }
@@ -63,7 +63,7 @@ class BillingService
     }
 
     /**
-     * Vérifier si une agence peut ajouter un utilisateur
+     * VÃ©rifier si une agence peut ajouter un utilisateur
      */
     public function canAddUser(int $agencyId): array
     {
@@ -75,7 +75,7 @@ class BillingService
         if ($count >= $plan['max_users']) {
             return [
                 'allowed' => false,
-                'reason'  => "Limite atteinte ({$plan['max_users']} agents max). Passez au plan supérieur.",
+                'reason'  => "Limite atteinte ({$plan['max_users']} agents max). Passez au plan supÃ©rieur.",
                 'upgrade' => true,
             ];
         }
@@ -84,7 +84,7 @@ class BillingService
     }
 
     /**
-     * Récupérer le plan actif d'une agence
+     * RÃ©cupÃ©rer le plan actif d'une agence
      */
     public function getAgencyPlan(int $agencyId): ?array
     {
@@ -112,7 +112,7 @@ class BillingService
     }
 
     /**
-     * Récupérer les statistiques d'usage
+     * RÃ©cupÃ©rer les statistiques d'usage
      */
     public function getUsageStats(int $agencyId): array
     {
@@ -139,7 +139,7 @@ class BillingService
     }
 
     /**
-     * Créer une facture
+     * CrÃ©er une facture
      */
     public function createInvoice(
         int    $agencyId,
@@ -166,7 +166,7 @@ class BillingService
     }
 
     /**
-     * Marquer une facture comme payée
+     * Marquer une facture comme payÃ©e
      */
     public function markInvoicePaid(int $invoiceId, string $method = 'cash'): void
     {
@@ -176,7 +176,7 @@ class BillingService
              WHERE id = ?'
         )->execute([$method, $invoiceId]);
 
-        // Étendre l'abonnement d'un mois
+        // Ã‰tendre l'abonnement d'un mois
         $stmt = $this->db->prepare(
             'SELECT * FROM invoices WHERE id = ? LIMIT 1'
         );
@@ -210,7 +210,7 @@ class BillingService
 
         if (!$plan) return false;
 
-        // Mettre à jour ou créer l'abonnement
+        // Mettre Ã  jour ou crÃ©er l'abonnement
         $this->db->prepare(
             'INSERT INTO agency_subscriptions (agency_id, plan_id, status, expires_at)
              VALUES (?, ?, "active", DATE_ADD(NOW(), INTERVAL 1 MONTH))
@@ -220,7 +220,7 @@ class BillingService
                 expires_at = DATE_ADD(NOW(), INTERVAL 1 MONTH)'
         )->execute([$agencyId, $plan['id']]);
 
-        // Créer une facture si plan payant
+        // CrÃ©er une facture si plan payant
         if ($plan['price'] > 0) {
             $this->createInvoice(
                 $agencyId,
@@ -236,7 +236,7 @@ class BillingService
         return true;
     }
 
-    // ── Helpers privés ────────────────────────────────────────
+    // â”€â”€ Helpers privÃ©s â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private function countResource(int $agencyId, string $table): int
     {
@@ -263,7 +263,7 @@ class BillingService
         if (!$plan) return ['allowed' => true, 'reason' => ''];
 
         if ($plan['status'] === 'expired') {
-            return ['allowed' => false, 'reason' => 'Votre abonnement a expiré'];
+            return ['allowed' => false, 'reason' => 'Votre abonnement a expirÃ©'];
         }
 
         $count = $this->countResource($agencyId, 'owners');
@@ -271,7 +271,7 @@ class BillingService
         if ($count >= $plan['max_owners']) {
             return [
                 'allowed' => false,
-                'reason'  => "Limite atteinte ({$plan['max_owners']} propriétaires max). Passez au plan supérieur.",
+                'reason'  => "Limite atteinte ({$plan['max_owners']} propriÃ©taires max). Passez au plan supÃ©rieur.",
                 'upgrade' => true,
             ];
         }

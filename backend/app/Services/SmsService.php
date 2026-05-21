@@ -6,7 +6,7 @@ namespace App\Services;
 
 /**
  * Service SMS via Africa's Talking
- * Parfait pour le Sénégal (Orange, Free, Expresso)
+ * Parfait pour le SÃ©nÃ©gal (Orange, Free, Expresso)
  */
 class SmsService
 {
@@ -19,11 +19,11 @@ class SmsService
         $apiKey   = env('AT_API_KEY',  '');
 
         if (empty($apiKey)) {
-            error_log("SmsService: AT_API_KEY non configuré");
+            error_log("SmsService: AT_API_KEY non configurÃ©");
             return false;
         }
 
-        // Formater le numéro (Sénégal +221)
+        // Formater le numÃ©ro (SÃ©nÃ©gal +221)
         $phone = self::formatPhone($phone);
 
         try {
@@ -59,7 +59,7 @@ class SmsService
                 return ($result['SMSMessageData']['Recipients'][0]['status'] ?? '') === 'Success';
             }
 
-            error_log("SmsService Error: HTTP {$httpCode} — {$response}");
+            error_log("SmsService Error: HTTP {$httpCode} â€” {$response}");
             return false;
 
         } catch (\Exception $e) {
@@ -69,24 +69,24 @@ class SmsService
     }
 
     /**
-     * Formate le numéro au format international
+     * Formate le numÃ©ro au format international
      */
     private static function formatPhone(string $phone): string
     {
         // Supprimer espaces et tirets
         $phone = preg_replace('/[\s\-\(\)]/', '', $phone);
 
-        // Sénégal : 7X XXX XX XX → +2217X XXX XX XX
+        // SÃ©nÃ©gal : 7X XXX XX XX â†’ +2217X XXX XX XX
         if (preg_match('/^(7[0-9]{8})$/', $phone)) {
             return '+221' . $phone;
         }
 
-        // Déjà au format international
+        // DÃ©jÃ  au format international
         if (str_starts_with($phone, '+')) {
             return $phone;
         }
 
-        // Ajouter +221 par défaut
+        // Ajouter +221 par dÃ©faut
         return '+221' . ltrim($phone, '0');
     }
 }

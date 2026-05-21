@@ -59,7 +59,7 @@ class Owner extends BaseModel
     }
 
     /**
-     * Liste les propriétaires avec le nombre de biens associés
+     * Liste les propriÃ©taires avec le nombre de biens associÃ©s
      */
     public function findAllWithPropertyCount(int $agencyId): array
     {

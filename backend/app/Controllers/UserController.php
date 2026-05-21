@@ -42,10 +42,10 @@ class UserController extends BaseController
         ]);
 
         if (!empty($errors)) {
-            Response::error('Données invalides', 422, $errors);
+            Response::error('DonnÃ©es invalides', 422, $errors);
         }
 
-        // ── Vérification limite plan ──
+        // â”€â”€ VÃ©rification limite plan â”€â”€
         $billing = new BillingService();
         $check   = $billing->canAddUser($request->agencyId);
 
@@ -57,7 +57,7 @@ class UserController extends BaseController
         }
 
         if ($this->userModel->emailExists($data['email'], $request->agencyId)) {
-            Response::error('Cet email est déjà utilisé', 409);
+            Response::error('Cet email est dÃ©jÃ  utilisÃ©', 409);
         }
 
         $userId = $this->userModel->create([
@@ -72,7 +72,7 @@ class UserController extends BaseController
 
 
         $user = $this->userModel->findById($userId, $request->agencyId);
-        Response::json($user, 'Agent créé avec succès', 201);
+        Response::json($user, 'Agent crÃ©Ã© avec succÃ¨s', 201);
     }
 
     // PUT /api/users/{id}
@@ -89,7 +89,7 @@ class UserController extends BaseController
         ]);
 
         if (!empty($errors)) {
-            Response::error('Données invalides', 422, $errors);
+            Response::error('DonnÃ©es invalides', 422, $errors);
         }
 
         if (!$this->userModel->findById($id, $request->agencyId)) {
@@ -97,7 +97,7 @@ class UserController extends BaseController
         }
 
         if ($this->userModel->emailExists($data['email'], $request->agencyId, $id)) {
-            Response::error('Cet email est déjà utilisé', 409);
+            Response::error('Cet email est dÃ©jÃ  utilisÃ©', 409);
         }
 
         $pdo  = Database::getInstance();
@@ -120,7 +120,7 @@ class UserController extends BaseController
 
         Response::json(
             $this->userModel->findById($id, $request->agencyId),
-            'Agent mis à jour'
+            'Agent mis Ã  jour'
         );
     }
 
@@ -135,9 +135,9 @@ class UserController extends BaseController
             Response::notFound('Utilisateur introuvable');
         }
 
-        // Empêcher de désactiver son propre compte
+        // EmpÃªcher de dÃ©sactiver son propre compte
         if ($id === $request->user['id']) {
-            Response::error('Vous ne pouvez pas désactiver votre propre compte', 400);
+            Response::error('Vous ne pouvez pas dÃ©sactiver votre propre compte', 400);
         }
 
         $pdo  = Database::getInstance();
@@ -149,7 +149,7 @@ class UserController extends BaseController
         $stmt->execute([$id, $request->agencyId]);
 
         $updated = $this->userModel->findById($id, $request->agencyId);
-        $status  = $updated['is_active'] ? 'activé' : 'désactivé';
+        $status  = $updated['is_active'] ? 'activÃ©' : 'dÃ©sactivÃ©';
         Response::json($updated, "Compte {$status}");
     }
 
@@ -164,7 +164,7 @@ class UserController extends BaseController
         ]);
 
         if (!empty($errors)) {
-            Response::error('Données invalides', 422, $errors);
+            Response::error('DonnÃ©es invalides', 422, $errors);
         }
 
         if (!$this->userModel->findById($id, $request->agencyId)) {
@@ -177,7 +177,7 @@ class UserController extends BaseController
             'UPDATE users SET password = ? WHERE id = ? AND agency_id = ?'
         )->execute([$hash, $id, $request->agencyId]);
 
-        Response::json(null, 'Mot de passe réinitialisé');
+        Response::json(null, 'Mot de passe rÃ©initialisÃ©');
     }
 
     // DELETE /api/users/{id}
@@ -191,12 +191,12 @@ class UserController extends BaseController
             Response::notFound('Utilisateur introuvable');
         }
 
-        // Empêcher de supprimer son propre compte
+        // EmpÃªcher de supprimer son propre compte
         if ($id === $request->user['id']) {
             Response::error('Vous ne pouvez pas supprimer votre propre compte', 400);
         }
 
         $this->userModel->softDelete($id, $request->agencyId);
-        Response::json(null, 'Agent supprimé');
+        Response::json(null, 'Agent supprimÃ©');
     }
 }

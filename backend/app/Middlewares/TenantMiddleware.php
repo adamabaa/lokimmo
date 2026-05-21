@@ -13,7 +13,7 @@ class TenantMiddleware
     private const PUBLIC_ROUTES = [
         '/api/health',
         '/api/auth/register',
-        '/api/auth/login',    // ← ajouter
+        '/api/auth/login',    // â† ajouter
         '/api/super/login',
         '/api/portal/login',
         '/api/owner-portal/login',
@@ -23,12 +23,12 @@ class TenantMiddleware
     {
         $uri = $request->getUri();
 
-        // Routes publiques — pas de tenant
+        // Routes publiques â€” pas de tenant
         if (in_array($uri, self::PUBLIC_ROUTES, true)) {
             return;
         }
 
-        // Routes Super Admin — pas de tenant
+        // Routes Super Admin â€” pas de tenant
         if (str_starts_with($uri, '/api/super/')) {
             return;
         }
@@ -50,7 +50,7 @@ class TenantMiddleware
         }
 
         if (empty($slug)) {
-            Response::error('Agence non identifiée', 400);
+            Response::error('Agence non identifiÃ©e', 400);
             exit;
         }
 
@@ -67,7 +67,7 @@ class TenantMiddleware
         }
 
         if (!(bool) $agency['is_active']) {
-            Response::error('Ce compte agence est désactivé', 403);
+            Response::error('Ce compte agence est dÃ©sactivÃ©', 403);
             exit;
         }
 

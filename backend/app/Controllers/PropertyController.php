@@ -52,7 +52,7 @@ class PropertyController extends BaseController
     {
         $user = $this->authenticate($request);
 
-        // 1. Vérification limite plan
+        // 1. VÃ©rification limite plan
         $billing = new BillingService();
         $check   = $billing->canAddProperty($request->agencyId);
         if (!$check['allowed']) {
@@ -75,18 +75,18 @@ class PropertyController extends BaseController
         ]);
 
         if (!empty($errors)) {
-            Response::error('Données invalides', 422, $errors);
+            Response::error('DonnÃ©es invalides', 422, $errors);
         }
 
-        // 3. Vérifier propriétaire agence
+        // 3. VÃ©rifier propriÃ©taire agence
         if (!$this->ownerModel->belongsToAgency(
             (int) $data['owner_id'],
             $request->agencyId
         )) {
-            Response::notFound('Propriétaire introuvable');
+            Response::notFound('PropriÃ©taire introuvable');
         }
 
-        // 4. Créer
+        // 4. CrÃ©er
         $id = $this->propertyModel->create(
             array_merge($data, ['agency_id' => $request->agencyId])
         );
@@ -96,15 +96,15 @@ class PropertyController extends BaseController
             $request->agencyId,
             $user['id'],
             'create_property',
-            "Création du bien : {$data['title']}",
+            "CrÃ©ation du bien : {$data['title']}",
             'property',
             (int) $id
         );
 
-        // 6. Réponse
+        // 6. RÃ©ponse
         Response::json(
             $this->propertyModel->findById($id, $request->agencyId),
-            'Bien créé',
+            'Bien crÃ©Ã©',
             201
         );
     }
@@ -127,7 +127,7 @@ class PropertyController extends BaseController
         ]);
 
         if (!empty($errors)) {
-            Response::error('Données invalides', 422, $errors);
+            Response::error('DonnÃ©es invalides', 422, $errors);
         }
 
         if (!$this->propertyModel->belongsToAgency($id, $request->agencyId)) {
@@ -148,7 +148,7 @@ class PropertyController extends BaseController
 
         Response::json(
             $this->propertyModel->findById($id, $request->agencyId),
-            'Bien mis à jour'
+            'Bien mis Ã  jour'
         );
     }
 
@@ -173,6 +173,6 @@ class PropertyController extends BaseController
         );
 
         $this->propertyModel->softDelete($id, $request->agencyId);
-        Response::json(null, 'Bien supprimé');
+        Response::json(null, 'Bien supprimÃ©');
     }
 }

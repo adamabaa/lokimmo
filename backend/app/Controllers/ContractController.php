@@ -62,10 +62,10 @@ class ContractController extends BaseController
         ]);
 
         if (!empty($errors)) {
-            Response::error('Données invalides', 422, $errors);
+            Response::error('DonnÃ©es invalides', 422, $errors);
         }
 
-        // Vérifier que le bien appartient à l'agence
+        // VÃ©rifier que le bien appartient Ã  l'agence
         if (!$this->propertyModel->belongsToAgency(
             (int) $data['property_id'],
             $request->agencyId
@@ -73,7 +73,7 @@ class ContractController extends BaseController
             Response::notFound('Bien introuvable');
         }
 
-        // Vérifier que le locataire appartient à l'agence
+        // VÃ©rifier que le locataire appartient Ã  l'agence
         if (!$this->tenantModel->belongsToAgency(
             (int) $data['tenant_id'],
             $request->agencyId
@@ -85,14 +85,14 @@ class ContractController extends BaseController
             array_merge($data, ['agency_id' => $request->agencyId])
         );
 
-        // Marquer le bien comme loué
+        // Marquer le bien comme louÃ©
         $this->contractModel->markPropertyAsRented(
             (int) $data['property_id']
         );
 
         Response::json(
             $this->contractModel->findById($id, $request->agencyId),
-            'Contrat créé',
+            'Contrat crÃ©Ã©',
             201
         );
     }
@@ -110,7 +110,7 @@ class ContractController extends BaseController
         ]);
 
         if (!empty($errors)) {
-            Response::error('Données invalides', 422, $errors);
+            Response::error('DonnÃ©es invalides', 422, $errors);
         }
 
         if (!$this->contractModel->belongsToAgency($id, $request->agencyId)) {
@@ -121,7 +121,7 @@ class ContractController extends BaseController
 
         Response::json(
             $this->contractModel->findById($id, $request->agencyId),
-            'Contrat mis à jour'
+            'Contrat mis Ã  jour'
         );
     }
 
@@ -136,6 +136,6 @@ class ContractController extends BaseController
         }
 
         $this->contractModel->softDelete($id, $request->agencyId);
-        Response::json(null, 'Contrat supprimé');
+        Response::json(null, 'Contrat supprimÃ©');
     }
 }

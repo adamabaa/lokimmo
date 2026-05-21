@@ -32,7 +32,7 @@ class OwnerPortalController extends BaseController
         ]);
 
         if (!empty($errors)) {
-            Response::error('Données invalides', 422, $errors);
+            Response::error('DonnÃ©es invalides', 422, $errors);
         }
 
         $stmt = $this->db->prepare(
@@ -56,7 +56,7 @@ class OwnerPortalController extends BaseController
         }
 
         if (!(bool) $owner['portal_active']) {
-            Response::forbidden('Votre accès au portail n\'est pas activé. Contactez votre agence.');
+            Response::forbidden('Votre accÃ¨s au portail n\'est pas activÃ©. Contactez votre agence.');
         }
 
         if (!password_verify($data['password'], $owner['portal_password'])) {
@@ -77,7 +77,7 @@ class OwnerPortalController extends BaseController
                 'last_name'  => $owner['last_name'],
                 'email'      => $owner['portal_email'] ?? $owner['email'],
             ],
-        ], 'Connexion réussie');
+        ], 'Connexion rÃ©ussie');
     }
 
     /**
@@ -97,7 +97,7 @@ class OwnerPortalController extends BaseController
         $stmt->execute([$auth['id'], $auth['agency_id']]);
         $owner = $stmt->fetch();
 
-        if (!$owner) Response::notFound('Propriétaire introuvable');
+        if (!$owner) Response::notFound('PropriÃ©taire introuvable');
 
         Response::json($owner);
     }
@@ -134,7 +134,7 @@ class OwnerPortalController extends BaseController
                       AND py.period_month = MONTH(NOW())
                       AND py.period_year  = YEAR(NOW())
                 ), 0) AS revenue_this_month,
-                -- Dépenses totales
+                -- DÃ©penses totales
                 COALESCE((
                     SELECT SUM(e.amount)
                     FROM property_expenses e
@@ -172,7 +172,7 @@ class OwnerPortalController extends BaseController
         $auth = OwnerPortalMiddleware::handle($request);
         $id   = $this->validateId($params['id']);
 
-        // Vérifier que le bien appartient au propriétaire
+        // VÃ©rifier que le bien appartient au propriÃ©taire
         $stmt = $this->db->prepare(
             'SELECT id FROM properties
              WHERE id = ? AND owner_id = ? AND agency_id = ? AND deleted_at IS NULL'
@@ -197,7 +197,7 @@ class OwnerPortalController extends BaseController
 
     /**
      * GET /api/owner-portal/properties/{id}/expenses
-     * Dépenses d'un bien
+     * DÃ©penses d'un bien
      */
     public function propertyExpenses(Request $request, array $params): void
     {
@@ -241,7 +241,7 @@ class OwnerPortalController extends BaseController
         $stmt->execute([$auth['id'], $auth['agency_id']]);
         $totalRevenue = (float) $stmt->fetchColumn();
 
-        // Total dépenses
+        // Total dÃ©penses
         $stmt = $this->db->prepare(
             'SELECT COALESCE(SUM(e.amount), 0) as total
              FROM property_expenses e

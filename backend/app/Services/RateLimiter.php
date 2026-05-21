@@ -7,17 +7,17 @@ namespace App\Services;
 use App\Core\Database;
 
 /**
- * Rate Limiter basé sur la base de données
- * Protège les routes sensibles contre le brute force
+ * Rate Limiter basÃ© sur la base de donnÃ©es
+ * ProtÃ¨ge les routes sensibles contre le brute force
  */
 class RateLimiter
 {
     /**
-     * Vérifie si la limite est atteinte
+     * VÃ©rifie si la limite est atteinte
      *
      * @param string $key      Identifiant unique (ip + route)
      * @param int    $maxAttempts Nombre max de tentatives
-     * @param int    $decaySeconds Fenêtre de temps en secondes
+     * @param int    $decaySeconds FenÃªtre de temps en secondes
      */
     public static function check(
         string $key,
@@ -28,7 +28,7 @@ class RateLimiter
 
         $pdo = Database::getInstance();
 
-        // Nettoyer les anciennes entrées
+        // Nettoyer les anciennes entrÃ©es
         $pdo->prepare(
             'DELETE FROM rate_limits WHERE expires_at < NOW()'
         )->execute();
@@ -41,7 +41,7 @@ class RateLimiter
         $record = $stmt->fetch();
 
         if (!$record) {
-            // Première tentative
+            // PremiÃ¨re tentative
             $pdo->prepare(
                 'INSERT INTO rate_limits (`key`, attempts, expires_at)
                  VALUES (?, 1, DATE_ADD(NOW(), INTERVAL ? SECOND))'
@@ -53,7 +53,7 @@ class RateLimiter
             return false; // Limite atteinte
         }
 
-        // Incrémenter
+        // IncrÃ©menter
         $pdo->prepare(
             'UPDATE rate_limits SET attempts = attempts + 1 WHERE `key` = ?'
         )->execute([$key]);
@@ -62,7 +62,7 @@ class RateLimiter
     }
 
     /**
-     * Réinitialise le compteur après un succès
+     * RÃ©initialise le compteur aprÃ¨s un succÃ¨s
      */
     public static function reset(string $key): void
     {

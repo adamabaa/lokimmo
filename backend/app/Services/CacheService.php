@@ -6,8 +6,8 @@ declare(strict_types=1);
 namespace App\Services;
 
 /**
- * Cache fichier simple — pas besoin de Redis
- * Parfait pour hébergement partagé
+ * Cache fichier simple â€” pas besoin de Redis
+ * Parfait pour hÃ©bergement partagÃ©
  */
 class CacheService
 {
@@ -35,7 +35,7 @@ class CacheService
 
         $data = unserialize(file_get_contents($file));
 
-        // Expiré ?
+        // ExpirÃ© ?
         if ($data['expires_at'] < time()) {
             unlink($file);
             return null;
@@ -45,8 +45,8 @@ class CacheService
     }
 
     /**
-     * Écrire dans le cache
-     * @param int $ttl Durée en secondes
+     * Ã‰crire dans le cache
+     * @param int $ttl DurÃ©e en secondes
      */
     public static function set(string $key, mixed $value, int $ttl = 300): void
     {
@@ -58,7 +58,7 @@ class CacheService
     }
 
     /**
-     * Supprimer une clé
+     * Supprimer une clÃ©
      */
     public static function forget(string $key): void
     {
@@ -67,7 +67,7 @@ class CacheService
     }
 
     /**
-     * Supprimer toutes les clés d'un préfixe
+     * Supprimer toutes les clÃ©s d'un prÃ©fixe
      */
     public static function forgetByPrefix(string $prefix): void
     {
@@ -81,7 +81,7 @@ class CacheService
     }
 
     /**
-     * Helper — lire ou calculer si absent
+     * Helper â€” lire ou calculer si absent
      */
     public static function remember(
         string   $key,

@@ -17,7 +17,7 @@ class OwnerPortalMiddleware
         );
 
         if ($token === null) {
-            Response::unauthorized('Token propriétaire manquant');
+            Response::unauthorized('Token propriÃ©taire manquant');
             exit;
         }
 
@@ -31,7 +31,7 @@ class OwnerPortalMiddleware
         }
 
         if ((int) $payload['agency_id'] !== $request->agencyId) {
-            Response::forbidden('Accès non autorisé');
+            Response::forbidden('AccÃ¨s non autorisÃ©');
             exit;
         }
 

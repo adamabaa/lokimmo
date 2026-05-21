@@ -8,7 +8,7 @@ use App\Core\Database;
 
 /**
  * Service de calcul du score locatif
- * Score sur 100 points basé sur plusieurs critères
+ * Score sur 100 points basÃ© sur plusieurs critÃ¨res
  */
 class ScoreService
 {
@@ -20,7 +20,7 @@ class ScoreService
     }
 
     /**
-     * Calcule et met à jour le score d'un locataire
+     * Calcule et met Ã  jour le score d'un locataire
      */
     public function calculate(int $tenantId, int $agencyId): int
     {
@@ -75,7 +75,7 @@ class ScoreService
         ];
     }
 
-    // ── Critères privés ───────────────────────────────────────
+    // â”€â”€ CritÃ¨res privÃ©s â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private function scorePaymentHistory(int $tenantId, int $agencyId): int
     {

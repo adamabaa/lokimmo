@@ -8,9 +8,10 @@ use App\Core\Database;
 
 /**
  * Service de journalisation des actions
- * Appelé depuis les controllers après chaque action importante
+ * AppelÃ© depuis les controllers aprÃ¨s chaque action importante
  */
 class LogService
+
 {
     /**
      * Enregistre une action utilisateur agence

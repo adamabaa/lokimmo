@@ -35,7 +35,7 @@ class JwtService
     }
 
     /**
-     * Token pour le Super Admin — secret différent
+     * Token pour le Super Admin â€” secret diffÃ©rent
      */
     public static function generateSuperAdmin(int $superAdminId): string
     {
@@ -51,7 +51,7 @@ class JwtService
     }
 
     /**
-     * Décoder un token agence
+     * DÃ©coder un token agence
      */
     public static function decode(string $token): array
     {
@@ -62,27 +62,27 @@ class JwtService
             );
             $payload = (array) $decoded;
 
-            // Vérifier que c'est bien un token agence
+            // VÃ©rifier que c'est bien un token agence
             if (isset($payload['type']) && $payload['type'] !== 'agency') {
                 throw new \RuntimeException('Type de token invalide');
             }
 
-            // Vérifier expiration explicitement
+            // VÃ©rifier expiration explicitement
             if (isset($payload['exp']) && $payload['exp'] < time()) {
-                throw new \RuntimeException('Token expiré');
+                throw new \RuntimeException('Token expirÃ©');
             }
 
             return $payload;
 
         } catch (ExpiredException $e) {
-            throw new \RuntimeException('Token expiré');
+            throw new \RuntimeException('Token expirÃ©');
         } catch (\Exception $e) {
             throw new \RuntimeException('Token invalide');
         }
     }
 
     /**
-     * Décoder un token super admin
+     * DÃ©coder un token super admin
      */
     public static function decodeSuperAdmin(string $token): array
     {
@@ -96,7 +96,7 @@ class JwtService
 
             return $payload;
         } catch (ExpiredException $e) {
-            throw new \RuntimeException('Token expiré');
+            throw new \RuntimeException('Token expirÃ©');
         } catch (\Exception $e) {
             throw new \RuntimeException('Token non valide');
         }
@@ -115,7 +115,7 @@ class JwtService
     {
         $secret = env('JWT_SECRET', '');
         if (empty($secret)) {
-            throw new \RuntimeException('JWT_SECRET non défini');
+            throw new \RuntimeException('JWT_SECRET non dÃ©fini');
         }
         return $secret;
     }
@@ -124,7 +124,7 @@ class JwtService
     {
         $secret = env('JWT_SUPER_SECRET', '');
         if (empty($secret)) {
-            throw new \RuntimeException('JWT_SUPER_SECRET non défini');
+            throw new \RuntimeException('JWT_SUPER_SECRET non dÃ©fini');
         }
         return $secret;
     }
@@ -149,7 +149,7 @@ class JwtService
     }
 
     /**
-     * Décoder un token locataire
+     * DÃ©coder un token locataire
      */
     public static function decodeTenant(string $token): array
     {
@@ -161,7 +161,7 @@ class JwtService
             }
             return $payload;
         } catch (ExpiredException $e) {
-            throw new \RuntimeException('Token expiré');
+            throw new \RuntimeException('Token expirÃ©');
         } catch (\Exception $e) {
             throw new \RuntimeException('Token non valide');
         }
@@ -191,7 +191,7 @@ class JwtService
             }
             return $payload;
         } catch (ExpiredException $e) {
-            throw new \RuntimeException('Token expiré');
+            throw new \RuntimeException('Token expirÃ©');
         } catch (\Exception $e) {
             throw new \RuntimeException('Token non valide');
         }

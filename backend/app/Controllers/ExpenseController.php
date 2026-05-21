@@ -69,7 +69,7 @@ class ExpenseController extends BaseController
         ]);
 
         if (!empty($errors)) {
-            Response::error('Données invalides', 422, $errors);
+            Response::error('DonnÃ©es invalides', 422, $errors);
         }
 
         $stmt = $this->db->prepare(
@@ -99,12 +99,12 @@ class ExpenseController extends BaseController
             $request->agencyId,
             $user['id'],
             'create_expense',
-            "Dépense créée : {$data['title']} — {$data['amount']} FCFA",
+            "DÃ©pense crÃ©Ã©e : {$data['title']} â€” {$data['amount']} FCFA",
             'expense',
             (int) $id
         );
 
-        Response::json(['id' => $id], 'Dépense enregistrée', 201);
+        Response::json(['id' => $id], 'DÃ©pense enregistrÃ©e', 201);
     }
 
     /**
@@ -139,10 +139,10 @@ class ExpenseController extends BaseController
             $request->agencyId,
             $user['id'],
             'update_expense',
-            "Dépense modifiée ID {$id}"
+            "DÃ©pense modifiÃ©e ID {$id}"
         );
 
-        Response::json(null, 'Dépense mise à jour');
+        Response::json(null, 'DÃ©pense mise Ã  jour');
     }
 
     /**
@@ -163,9 +163,9 @@ class ExpenseController extends BaseController
             $request->agencyId,
             $user['id'],
             'delete_expense',
-            "Dépense supprimée ID {$id}"
+            "DÃ©pense supprimÃ©e ID {$id}"
         );
 
-        Response::json(null, 'Dépense supprimée');
+        Response::json(null, 'DÃ©pense supprimÃ©e');
     }
 }

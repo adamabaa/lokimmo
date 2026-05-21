@@ -34,7 +34,7 @@ class MailService
             : PHPMailer::ENCRYPTION_SMTPS;   
             $mail->Port       = (int) env('MAIL_PORT', 587);
 
-            // Expéditeur
+            // ExpÃ©diteur
             $mail->setFrom(
                 env('MAIL_FROM_ADDRESS', 'noreply@lokimmo.com'),
                 env('MAIL_FROM_NAME',    'Lokimmo')
@@ -129,8 +129,8 @@ class MailService
                             <tr>
                                 <td style='background:#f9f9f9;padding:20px 32px;text-align:center;
                                     border-top:1px solid #e0e0e0;font-size:12px;color:#999'>
-                                    {$agencyName} — Powered by Lokimmo<br>
-                                    <a href='#' style='color:{$primaryColor}'>Se désabonner</a>
+                                    {$agencyName} â€” Powered by Lokimmo<br>
+                                    <a href='#' style='color:{$primaryColor}'>Se dÃ©sabonner</a>
                                 </td>
                             </tr>
                         </table>

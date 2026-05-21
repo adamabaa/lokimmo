@@ -34,7 +34,7 @@ class OnlinePaymentController extends BaseController
             Response::error('payment_id requis', 422);
         }
 
-        // Récupérer le paiement
+        // RÃ©cupÃ©rer le paiement
         $stmt = $this->db->prepare(
             'SELECT py.*, t.first_name, t.last_name, t.email, t.phone,
                     p.title AS property_title,
@@ -53,10 +53,10 @@ class OnlinePaymentController extends BaseController
 
         if (!$payment) Response::notFound('Paiement introuvable');
         if ($payment['status'] === 'paid') {
-            Response::error('Ce paiement est déjà réglé', 400);
+            Response::error('Ce paiement est dÃ©jÃ  rÃ©glÃ©', 400);
         }
 
-        // Générer un ID transaction unique
+        // GÃ©nÃ©rer un ID transaction unique
         $transactionId = 'LK-' . $request->agencyId . '-' . $data['payment_id'] . '-' . time();
 
         $amount      = (float) $payment['amount_due'];
@@ -108,18 +108,18 @@ class OnlinePaymentController extends BaseController
             $request->agencyId,
             $user['id'],
             'initiate_online_payment',
-            "Paiement CinetPay initié : {$amount} FCFA"
+            "Paiement CinetPay initiÃ© : {$amount} FCFA"
         );
 
         Response::json([
             'transaction_id' => $transactionId,
             'payment_url'    => $result['payment_url'],
-        ], 'Paiement initié');
+        ], 'Paiement initiÃ©');
     }
 
     /**
      * POST /api/online-payments/verify
-     * Vérifier après retour utilisateur
+     * VÃ©rifier aprÃ¨s retour utilisateur
      */
     public function verify(Request $request): void
     {
@@ -132,10 +132,10 @@ class OnlinePaymentController extends BaseController
         $result = $this->cinetpay->checkPayment($data['transaction_id']);
 
         if (!$result) {
-            Response::error('Impossible de vérifier le paiement', 500);
+            Response::error('Impossible de vÃ©rifier le paiement', 500);
         }
 
-        // Récupérer la transaction en base
+        // RÃ©cupÃ©rer la transaction en base
         $stmt = $this->db->prepare(
             'SELECT * FROM online_payments WHERE provider_token = ? LIMIT 1'
         );
@@ -159,7 +159,7 @@ class OnlinePaymentController extends BaseController
 
     /**
      * POST /api/online-payments/notify
-     * Webhook CinetPay — appelé automatiquement par CinetPay
+     * Webhook CinetPay â€” appelÃ© automatiquement par CinetPay
      */
     public function notify(Request $request): void
     {
@@ -171,7 +171,7 @@ class OnlinePaymentController extends BaseController
             echo 'KO'; exit;
         }
 
-        // Vérifier avec l'API
+        // VÃ©rifier avec l'API
         $result = $this->cinetpay->checkPayment($transactionId);
 
         if ($result && $result['is_paid']) {
@@ -214,18 +214,18 @@ class OnlinePaymentController extends BaseController
     }
 
     /**
-     * Marquer un paiement comme réglé
+     * Marquer un paiement comme rÃ©glÃ©
      */
     private function markAsPaid(array $onlinePayment, string $transactionId): void
     {
-        // Mettre à jour online_payments
+        // Mettre Ã  jour online_payments
         $this->db->prepare(
             'UPDATE online_payments
              SET status = "completed", paid_at = NOW()
              WHERE provider_token = ?'
         )->execute([$transactionId]);
 
-        // Mettre à jour payments
+        // Mettre Ã  jour payments
         if ($onlinePayment['payment_id']) {
             $this->db->prepare(
                 'UPDATE payments

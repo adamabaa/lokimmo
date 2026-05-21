@@ -22,12 +22,12 @@ class Response
         self::send(['success' => false, 'message' => $message, 'errors' => $errors], $status);
     }
 
-    public static function unauthorized(string $message = 'Non autorisé'): void
+    public static function unauthorized(string $message = 'Non autorisÃ©'): void
     {
         self::error($message, 401);
     }
 
-    public static function forbidden(string $message = 'Accès interdit'): void
+    public static function forbidden(string $message = 'AccÃ¨s interdit'): void
     {
         self::error($message, 403);
     }

@@ -51,7 +51,7 @@ class Request
         $uri = strtok($uri, '?');
 
         // Supprimer le sous-dossier XAMPP du chemin
-        // /lokimmo/backend/public/api/super/login → /api/super/login
+        // /lokimmo/backend/public/api/super/login â†’ /api/super/login
         $basePath = str_replace(
             '\\', '/',
             dirname($_SERVER['SCRIPT_NAME'])
@@ -93,7 +93,7 @@ class Request
     }
 
     /**
- * Retourne une valeur sanitisée (protège contre XSS)
+ * Retourne une valeur sanitisÃ©e (protÃ¨ge contre XSS)
     */
     public function sanitized(string $key, mixed $default = null): mixed
     {
@@ -102,7 +102,7 @@ class Request
         if (is_string($value)) {
             // Supprimer les espaces inutiles
             $value = trim($value);
-            // Convertir les caractères spéciaux HTML
+            // Convertir les caractÃ¨res spÃ©ciaux HTML
             $value = htmlspecialchars($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
         }
 
@@ -110,7 +110,7 @@ class Request
     }
 
 /**
- * Retourne toutes les données sanitisées
+ * Retourne toutes les donnÃ©es sanitisÃ©es
  */
 public function sanitizedAll(): array
     {

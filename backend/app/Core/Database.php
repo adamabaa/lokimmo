@@ -47,7 +47,7 @@ class Database
             // SSL requis par Aiven en production
             if ($ssl) {
                 $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
-                // Si tu as le CA certificate d'Aiven téléchargé :
+                // Si tu as le CA certificate d'Aiven tÃ©lÃ©chargÃ© :
                 // $options[PDO::MYSQL_ATTR_SSL_CA] = BASE_PATH . '/config/aiven-ca.pem';
             }
 

@@ -8,8 +8,8 @@ use App\Core\Database;
 use PDO;
 
 /**
- * Model de base — mutualisé pour tous les modules
- * Chaque model hérite de celui-ci
+ * Model de base â€” mutualisÃ© pour tous les modules
+ * Chaque model hÃ©rite de celui-ci
  */
 abstract class BaseModel
 {
@@ -54,7 +54,7 @@ abstract class BaseModel
     }
 
     /**
-     * Soft delete — ne supprime jamais vraiment
+     * Soft delete â€” ne supprime jamais vraiment
      */
     public function softDelete(int $id, int $agencyId): bool
     {
@@ -69,7 +69,7 @@ abstract class BaseModel
     }
 
     /**
-     * Vérifie qu'un enregistrement appartient bien à l'agence
+     * VÃ©rifie qu'un enregistrement appartient bien Ã  l'agence
      */
     public function belongsToAgency(int $id, int $agencyId): bool
     {

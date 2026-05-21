@@ -7,13 +7,13 @@ namespace App\Services;
 use App\Core\Database;
 
 /**
- * Synchronisation automatique Paiements → Caisse
- * Appelé quand un paiement est marqué payé
+ * Synchronisation automatique Paiements â†’ Caisse
+ * AppelÃ© quand un paiement est marquÃ© payÃ©
  */
 class CashSyncService
 {
     /**
-     * Créer une opération de caisse depuis un paiement
+     * CrÃ©er une opÃ©ration de caisse depuis un paiement
      */
     public static function syncPayment(
         int    $paymentId,
@@ -22,14 +22,14 @@ class CashSyncService
     ): bool {
         $db = Database::getInstance();
 
-        // Vérifier si déjà synchronisé
+        // VÃ©rifier si dÃ©jÃ  synchronisÃ©
         $stmt = $db->prepare(
             'SELECT id FROM cash_operations WHERE payment_id = ? LIMIT 1'
         );
         $stmt->execute([$paymentId]);
-        if ($stmt->fetch()) return false; // Déjà synchro
+        if ($stmt->fetch()) return false; // DÃ©jÃ  synchro
 
-        // Récupérer le paiement
+        // RÃ©cupÃ©rer le paiement
         $stmt = $db->prepare(
             'SELECT py.*, t.first_name, t.last_name,
                     p.title AS property_title,
@@ -55,12 +55,12 @@ class CashSyncService
         $stmt2->execute([$agencyId, $userId]);
         $session = $stmt2->fetch();
 
-        // Pas de session ouverte → créer automatiquement
+        // Pas de session ouverte â†’ crÃ©er automatiquement
         if (!$session) {
             $db->prepare(
                 'INSERT INTO cash_sessions
                     (agency_id, user_id, date, opening_balance, notes)
-                 VALUES (?, ?, CURDATE(), 0, "Session auto-créée")'
+                 VALUES (?, ?, CURDATE(), 0, "Session auto-crÃ©Ã©e")'
             )->execute([$agencyId, $userId]);
             $sessionId = (int) $db->lastInsertId();
         } else {
@@ -72,15 +72,15 @@ class CashSyncService
         );
         $month      = $payment['period_month'] ?? '';
         $year       = $payment['period_year']  ?? '';
-        $months     = ['Jan','Fév','Mar','Avr','Mai','Jun',
-                       'Jul','Aoû','Sep','Oct','Nov','Déc'];
+        $months     = ['Jan','FÃ©v','Mar','Avr','Mai','Jun',
+                       'Jul','AoÃ»','Sep','Oct','Nov','DÃ©c'];
         $monthLabel = $month ? ($months[$month - 1] ?? $month) : '';
 
         $description = "Loyer {$monthLabel} {$year}"
-            . ($tenantName ? " — {$tenantName}" : '')
+            . ($tenantName ? " â€” {$tenantName}" : '')
             . ($payment['property_title'] ? " ({$payment['property_title']})" : '');
 
-        // Créer l'opération de caisse
+        // CrÃ©er l'opÃ©ration de caisse
         $db->prepare(
             'INSERT INTO cash_operations
                 (agency_id, session_id, user_id, type, category,
@@ -104,8 +104,8 @@ class CashSyncService
     }
 
     /**
-     * Annuler une opération de caisse liée à un paiement
-     * (quand un paiement payé est remis en attente)
+     * Annuler une opÃ©ration de caisse liÃ©e Ã  un paiement
+     * (quand un paiement payÃ© est remis en attente)
      */
     public static function unsyncPayment(int $paymentId): void
     {

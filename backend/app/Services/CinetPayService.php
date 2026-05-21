@@ -25,7 +25,7 @@ class CinetPayService
     }
 
     /**
-     * Initier un paiement — retourne l'URL de paiement
+     * Initier un paiement â€” retourne l'URL de paiement
      */
     public function initiatePayment(
         string $transactionId,
@@ -61,7 +61,7 @@ class CinetPayService
             'metadata'        => $transactionId,
             'lang'            => 'fr',
             'invoice_data'    => [
-                'Référence' => $transactionId,
+                'RÃ©fÃ©rence' => $transactionId,
             ],
         ];
 
@@ -82,7 +82,7 @@ class CinetPayService
     }
 
     /**
-     * Vérifier le statut d'un paiement
+     * VÃ©rifier le statut d'un paiement
      */
     public function checkPayment(string $transactionId): ?array
     {
@@ -109,7 +109,7 @@ class CinetPayService
     }
 
     /**
-     * Requête HTTP
+     * RequÃªte HTTP
      */
     private function request(string $method, string $endpoint, array $data = []): ?array
     {

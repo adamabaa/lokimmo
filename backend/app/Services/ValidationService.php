@@ -45,26 +45,26 @@ class ValidationService
             'email' => (
                 $value !== null && $value !== '' &&
                 !filter_var($value, FILTER_VALIDATE_EMAIL)
-            ) ? "Le champ {$field} doit être un email valide" : null,
+            ) ? "Le champ {$field} doit Ãªtre un email valide" : null,
 
             'min' => (
                 $value !== null && $value !== '' &&
                 strlen((string) $value) < (int) $ruleParam
-            ) ? "Le champ {$field} doit contenir au moins {$ruleParam} caractères" : null,
+            ) ? "Le champ {$field} doit contenir au moins {$ruleParam} caractÃ¨res" : null,
 
             'max' => (
                 $value !== null && $value !== '' &&
                 strlen((string) $value) > (int) $ruleParam
-            ) ? "Le champ {$field} ne doit pas dépasser {$ruleParam} caractères" : null,
+            ) ? "Le champ {$field} ne doit pas dÃ©passer {$ruleParam} caractÃ¨res" : null,
 
             'numeric' => (
                 $value !== null && $value !== '' && !is_numeric($value)
-            ) ? "Le champ {$field} doit être un nombre" : null,
+            ) ? "Le champ {$field} doit Ãªtre un nombre" : null,
 
             'in' => (
                 $value !== null && $value !== '' &&
                 !in_array($value, explode(',', $ruleParam ?? ''), true)
-            ) ? "La valeur du champ {$field} n'est pas autorisée" : null,
+            ) ? "La valeur du champ {$field} n'est pas autorisÃ©e" : null,
 
             'confirmed' => (
                 $value !== ($data["{$field}_confirmation"] ?? null)
@@ -78,27 +78,27 @@ class ValidationService
             'phone' => (
                 $value !== null && $value !== '' &&
                 !preg_match('/^[0-9+\s()-]{6,20}$/', (string) $value)
-            ) ? "Le champ {$field} n'est pas un numéro valide" : null,
+            ) ? "Le champ {$field} n'est pas un numÃ©ro valide" : null,
 
             'color' => (
                 $value !== null && $value !== '' &&
                 !preg_match('/^#[0-9A-Fa-f]{6}$/', (string) $value)
-            ) ? "Le champ {$field} doit être une couleur hexadécimale valide (#RRGGBB)" : null,
+            ) ? "Le champ {$field} doit Ãªtre une couleur hexadÃ©cimale valide (#RRGGBB)" : null,
 
             'url' => (
                 $value !== null && $value !== '' &&
                 !filter_var($value, FILTER_VALIDATE_URL)
-            ) ? "Le champ {$field} doit être une URL valide" : null,
+            ) ? "Le champ {$field} doit Ãªtre une URL valide" : null,
 
             'date' => (
                 $value !== null && $value !== '' &&
                 !strtotime((string) $value)
-            ) ? "Le champ {$field} doit être une date valide" : null,
+            ) ? "Le champ {$field} doit Ãªtre une date valide" : null,
 
             'integer' => (
                 $value !== null && $value !== '' &&
                 !ctype_digit((string) $value)
-            ) ? "Le champ {$field} doit être un entier positif" : null,
+            ) ? "Le champ {$field} doit Ãªtre un entier positif" : null,
 
             default => null,
         };

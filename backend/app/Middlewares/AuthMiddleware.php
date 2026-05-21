@@ -18,21 +18,21 @@ class AuthMiddleware
 
         if ($token === null) {
             Response::unauthorized('Token d\'authentification manquant');
-            exit; // ← dire à PHP que le code s'arrête ici
+            exit; // â† dire Ã  PHP que le code s'arrÃªte ici
         }
 
-        $payload = null; // ← initialiser à null
+        $payload = null; // â† initialiser Ã  null
 
         try {
             $payload = JwtService::decode($token);
         } catch (\RuntimeException $e) {
             Response::unauthorized($e->getMessage());
-            exit; // ← idem
+            exit; // â† idem
         }
 
-        // $payload est forcément défini ici
+        // $payload est forcÃ©ment dÃ©fini ici
         if ((int) $payload['agency_id'] !== $request->agencyId) {
-            Response::forbidden('Accès non autorisé à cette agence');
+            Response::forbidden('AccÃ¨s non autorisÃ© Ã  cette agence');
         }
 
         $request->user = [
