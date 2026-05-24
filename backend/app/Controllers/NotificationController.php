@@ -19,7 +19,7 @@ class NotificationController extends BaseController
 
     /**
      * GET /api/notifications
-     * Liste les notifications de l'utilisateur connectÃ©
+     * Liste les notifications de l'utilisateur connecté
      */
     public function index(Request $request): void
     {
@@ -89,8 +89,8 @@ class NotificationController extends BaseController
 
     /**
      * GET /api/notifications/generate
-     * GÃ©nÃ¨re les notifications automatiques
-     * Loyers en retard + Contrats expirant bientÃ´t
+     * Génère les notifications automatiques
+     * Loyers en retard + Contrats expirant bientôt
      */
     public function generate(Request $request): void
     {
@@ -101,21 +101,21 @@ class NotificationController extends BaseController
         // 1. Loyers en retard
         $stmt = $this->db->prepare(
             'SELECT py.id, py.amount_due, py.due_date,
-                    CONCAT(t.first_name, " ", t.last_name) AS tenant_name,
+                    CONCAT(t.first_name, \' \', t.last_name) AS tenant_name,
                     p.title AS property_title
              FROM payments py
              LEFT JOIN contracts  c ON c.id = py.contract_id
              LEFT JOIN tenants    t ON t.id = c.tenant_id
              LEFT JOIN properties p ON p.id = c.property_id
              WHERE py.agency_id = ?
-               AND py.status IN ("pending", "partial")
+               AND py.status IN (\'pending\', \'partial\')
                AND py.due_date < CURDATE()'
         );
         $stmt->execute([$agencyId]);
         $latePayments = $stmt->fetchAll();
 
         foreach ($latePayments as $payment) {
-            $body = "Le loyer de {$payment['property_title']} (Ã©chÃ©ance : {$payment['due_date']}) n'a pas Ã©tÃ© rÃ©glÃ©.";
+            $body = "Le loyer de {$payment['property_title']} (échéance : {$payment['due_date']}) n'a pas été réglé.";
 
             if ($this->notificationExists($agencyId, 'payment_late', $body)) {
                 continue;
@@ -124,7 +124,7 @@ class NotificationController extends BaseController
             $this->createForAllUsers(
                 $agencyId,
                 'payment_late',
-                "Loyer en retard â€” {$payment['tenant_name']}",
+                "Loyer en retard — {$payment['tenant_name']}",
                 $body
             );
             $count++;
@@ -133,13 +133,13 @@ class NotificationController extends BaseController
         // 2. Contrats expirant dans 30 jours
         $stmt = $this->db->prepare(
             'SELECT c.id, c.end_date,
-                    CONCAT(t.first_name, " ", t.last_name) AS tenant_name,
+                    CONCAT(t.first_name, \' \', t.last_name) AS tenant_name,
                     p.title AS property_title
              FROM contracts c
              LEFT JOIN tenants    t ON t.id = c.tenant_id
              LEFT JOIN properties p ON p.id = c.property_id
              WHERE c.agency_id = ?
-               AND c.status = "active"
+               AND c.status = \'active\'
                AND c.end_date IS NOT NULL
                AND c.end_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)'
         );
@@ -156,16 +156,16 @@ class NotificationController extends BaseController
             $this->createForAllUsers(
                 $agencyId,
                 'contract_expiring',
-                "Contrat expirant â€” {$contract['tenant_name']}",
+                "Contrat expirant — {$contract['tenant_name']}",
                 $body
             );
             $count++;
         }
 
-        Response::json(['generated' => $count], "{$count} notification(s) gÃ©nÃ©rÃ©e(s)");
+        Response::json(['generated' => $count], "{$count} notification(s) générée(s)");
     }
 
-    // â”€â”€ Helpers privÃ©s â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── Helpers privés ───────────────────────────────────────────────
 
     private function notificationExists(
         int $agencyId,
@@ -187,7 +187,6 @@ class NotificationController extends BaseController
         string $title,
         string $body
     ): void {
-        // RÃ©cupÃ©rer tous les users actifs de l'agence
         $stmt = $this->db->prepare(
             'SELECT id FROM users
              WHERE agency_id = ? AND is_active = 1 AND deleted_at IS NULL'

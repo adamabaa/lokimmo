@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Core\Database;
-use App\Services\CacheService;
 
 class BillingService
 {
@@ -16,16 +15,13 @@ class BillingService
         $this->db = Database::getInstance();
     }
 
-    /**
-     * VÃ©rifier si une agence peut ajouter un bien
-     */
     public function canAddProperty(int $agencyId): array
     {
         $plan = $this->getAgencyPlan($agencyId);
         if (!$plan) return ['allowed' => true, 'reason' => ''];
 
         if ($plan['status'] === 'expired') {
-            return ['allowed' => false, 'reason' => 'Votre abonnement a expirÃ©'];
+            return ['allowed' => false, 'reason' => 'Votre abonnement a expiré'];
         }
 
         $count = $this->countResource($agencyId, 'properties');
@@ -33,7 +29,7 @@ class BillingService
         if ($count >= $plan['max_properties']) {
             return [
                 'allowed' => false,
-                'reason'  => "Limite atteinte ({$plan['max_properties']} biens max). Passez au plan supÃ©rieur.",
+                'reason'  => "Limite atteinte ({$plan['max_properties']} biens max). Passez au plan supérieur.",
                 'upgrade' => true,
             ];
         }
@@ -41,9 +37,6 @@ class BillingService
         return ['allowed' => true, 'reason' => ''];
     }
 
-    /**
-     * VÃ©rifier si une agence peut ajouter un locataire
-     */
     public function canAddTenant(int $agencyId): array
     {
         $plan = $this->getAgencyPlan($agencyId);
@@ -54,7 +47,7 @@ class BillingService
         if ($count >= $plan['max_tenants']) {
             return [
                 'allowed' => false,
-                'reason'  => "Limite atteinte ({$plan['max_tenants']} locataires max). Passez au plan supÃ©rieur.",
+                'reason'  => "Limite atteinte ({$plan['max_tenants']} locataires max). Passez au plan supérieur.",
                 'upgrade' => true,
             ];
         }
@@ -62,9 +55,6 @@ class BillingService
         return ['allowed' => true, 'reason' => ''];
     }
 
-    /**
-     * VÃ©rifier si une agence peut ajouter un utilisateur
-     */
     public function canAddUser(int $agencyId): array
     {
         $plan = $this->getAgencyPlan($agencyId);
@@ -75,7 +65,7 @@ class BillingService
         if ($count >= $plan['max_users']) {
             return [
                 'allowed' => false,
-                'reason'  => "Limite atteinte ({$plan['max_users']} agents max). Passez au plan supÃ©rieur.",
+                'reason'  => "Limite atteinte ({$plan['max_users']} agents max). Passez au plan supérieur.",
                 'upgrade' => true,
             ];
         }
@@ -83,37 +73,43 @@ class BillingService
         return ['allowed' => true, 'reason' => ''];
     }
 
-    /**
-     * RÃ©cupÃ©rer le plan actif d'une agence
-     */
-    public function getAgencyPlan(int $agencyId): ?array
+    public function canAddOwner(int $agencyId): array
     {
-        $cacheKey = "agency_plan_{$agencyId}";
+        $plan = $this->getAgencyPlan($agencyId);
+        if (!$plan) return ['allowed' => true, 'reason' => ''];
 
-        // Lire depuis cache (5 minutes)
-        $cached = CacheService::get($cacheKey);
-        if ($cached !== null) return $cached;
+        if ($plan['status'] === 'expired') {
+            return ['allowed' => false, 'reason' => 'Votre abonnement a expiré'];
+        }
 
-        $stmt = $this->db->prepare(
-            'SELECT s.*, p.name AS plan_name, p.slug AS plan_slug,
-                    p.price, p.max_properties, p.max_users,
-                    p.max_owners, p.max_tenants, p.features
-            FROM agency_subscriptions s
-            LEFT JOIN subscription_plans p ON p.id = s.plan_id
-            WHERE s.agency_id = ? LIMIT 1'
-        );
-        $stmt->execute([$agencyId]);
-        $plan = $stmt->fetch() ?: null;
+        $count = $this->countResource($agencyId, 'owners');
 
-        // Mettre en cache 5 minutes
-        CacheService::set($cacheKey, $plan, 300);
+        if ($count >= $plan['max_owners']) {
+            return [
+                'allowed' => false,
+                'reason'  => "Limite atteinte ({$plan['max_owners']} propriétaires max). Passez au plan supérieur.",
+                'upgrade' => true,
+            ];
+        }
 
-        return $plan;
+        return ['allowed' => true, 'reason' => ''];
     }
 
-    /**
-     * RÃ©cupÃ©rer les statistiques d'usage
-     */
+    public function getAgencyPlan(int $agencyId): ?array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT s.*, p.name AS plan_name, p.slug AS plan_slug,
+                    p.price, p.max_properties, p.max_users,
+                    p.max_owners, p.max_tenants, p.features
+             FROM agency_subscriptions s
+             LEFT JOIN subscription_plans p ON p.id = s.plan_id
+             WHERE s.agency_id = ? LIMIT 1"
+        );
+        $stmt->execute([$agencyId]);
+
+        return $stmt->fetch() ?: null;
+    }
+
     public function getUsageStats(int $agencyId): array
     {
         $plan = $this->getAgencyPlan($agencyId);
@@ -138,9 +134,6 @@ class BillingService
         ];
     }
 
-    /**
-     * CrÃ©er une facture
-     */
     public function createInvoice(
         int    $agencyId,
         int    $planId,
@@ -153,30 +146,35 @@ class BillingService
             4, '0', STR_PAD_LEFT
         );
 
+        // On utilise un binding nommé pour éviter tout conflit de guillemets
         $stmt = $this->db->prepare(
-            'INSERT INTO invoices
+            "INSERT INTO invoices
                 (agency_id, plan_id, invoice_number, amount, status,
                  due_date, period_start, period_end)
-             VALUES (?, ?, ?, ?, "sent",
-                 DATE_ADD(NOW(), INTERVAL 7 DAY), ?, ?)'
+             VALUES (:agency_id, :plan_id, :number, :amount, :status,
+                 DATE_ADD(NOW(), INTERVAL 7 DAY), :period_start, :period_end)"
         );
-        $stmt->execute([$agencyId, $planId, $number, $amount, $periodStart, $periodEnd]);
+        $stmt->execute([
+            ':agency_id'    => $agencyId,
+            ':plan_id'      => $planId,
+            ':number'       => $number,
+            ':amount'       => $amount,
+            ':status'       => 'sent',
+            ':period_start' => $periodStart,
+            ':period_end'   => $periodEnd,
+        ]);
 
         return (int) $this->db->lastInsertId();
     }
 
-    /**
-     * Marquer une facture comme payÃ©e
-     */
     public function markInvoicePaid(int $invoiceId, string $method = 'cash'): void
     {
         $this->db->prepare(
-            'UPDATE invoices
-             SET status = "paid", paid_at = NOW(), payment_method = ?
-             WHERE id = ?'
+            "UPDATE invoices
+             SET status = 'paid', paid_at = NOW(), payment_method = ?
+             WHERE id = ?"
         )->execute([$method, $invoiceId]);
 
-        // Ã‰tendre l'abonnement d'un mois
         $stmt = $this->db->prepare(
             'SELECT * FROM invoices WHERE id = ? LIMIT 1'
         );
@@ -185,21 +183,17 @@ class BillingService
 
         if ($invoice) {
             $this->db->prepare(
-                'UPDATE agency_subscriptions
-                 SET status     = "active",
+                "UPDATE agency_subscriptions
+                 SET status     = 'active',
                      expires_at = DATE_ADD(
                          COALESCE(expires_at, NOW()),
                          INTERVAL 1 MONTH
                      )
-                 WHERE agency_id = ?'
+                 WHERE agency_id = ?"
             )->execute([$invoice['agency_id']]);
         }
     }
 
-    /**
-     * Changer le plan d'une agence
-     */
-   
     public function changePlan(int $agencyId, string $planSlug): bool
     {
         $stmt = $this->db->prepare(
@@ -210,17 +204,15 @@ class BillingService
 
         if (!$plan) return false;
 
-        // Mettre Ã  jour ou crÃ©er l'abonnement
         $this->db->prepare(
-            'INSERT INTO agency_subscriptions (agency_id, plan_id, status, expires_at)
-             VALUES (?, ?, "active", DATE_ADD(NOW(), INTERVAL 1 MONTH))
+            "INSERT INTO agency_subscriptions (agency_id, plan_id, status, expires_at)
+             VALUES (?, ?, 'active', DATE_ADD(NOW(), INTERVAL 1 MONTH))
              ON DUPLICATE KEY UPDATE
                 plan_id    = VALUES(plan_id),
-                status     = "active",
-                expires_at = DATE_ADD(NOW(), INTERVAL 1 MONTH)'
+                status     = 'active',
+                expires_at = DATE_ADD(NOW(), INTERVAL 1 MONTH)"
         )->execute([$agencyId, $plan['id']]);
 
-        // CrÃ©er une facture si plan payant
         if ($plan['price'] > 0) {
             $this->createInvoice(
                 $agencyId,
@@ -231,12 +223,10 @@ class BillingService
             );
         }
 
-        CacheService::forget("agency_plan_{$agencyId}");
-
         return true;
     }
 
-    // â”€â”€ Helpers privÃ©s â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── Helpers privés ───────────────────────────────────────────────
 
     private function countResource(int $agencyId, string $table): int
     {
@@ -255,27 +245,5 @@ class BillingService
         );
         $stmt->execute();
         return (int) $stmt->fetchColumn() + 1;
-    }
-
-    public function canAddOwner(int $agencyId): array
-    {
-        $plan = $this->getAgencyPlan($agencyId);
-        if (!$plan) return ['allowed' => true, 'reason' => ''];
-
-        if ($plan['status'] === 'expired') {
-            return ['allowed' => false, 'reason' => 'Votre abonnement a expirÃ©'];
-        }
-
-        $count = $this->countResource($agencyId, 'owners');
-
-        if ($count >= $plan['max_owners']) {
-            return [
-                'allowed' => false,
-                'reason'  => "Limite atteinte ({$plan['max_owners']} propriÃ©taires max). Passez au plan supÃ©rieur.",
-                'upgrade' => true,
-            ];
-        }
-
-        return ['allowed' => true, 'reason' => ''];
     }
 }

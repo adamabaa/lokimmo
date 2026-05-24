@@ -13,7 +13,6 @@ class HealthController extends BaseController
     public function index(Request $request): void
     {
         try {
-            // VÃ©rifier la connexion DB
             $db = Database::getInstance();
             $db->query("SELECT 1");
 

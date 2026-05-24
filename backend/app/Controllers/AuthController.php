@@ -27,7 +27,7 @@ class AuthController extends BaseController
 
     /**
      * POST /api/auth/register
-     * CrÃ©e une agence + son admin en une seule requÃªte
+     * Crée une agence + son admin en une seule requête
      */
     public function register(Request $request): void
     {
@@ -42,21 +42,19 @@ class AuthController extends BaseController
         ]);
 
         if (!empty($errors)) {
-            Response::error('DonnÃ©es invalides', 422, $errors);
+            Response::error('Données invalides', 422, $errors);
         }
 
         if ($this->agencyModel->slugExists($data['agency_slug'])) {
-            Response::error('Ce nom d\'agence est dÃ©jÃ  pris', 409);
+            Response::error('Ce nom d\'agence est déjà pris', 409);
         }
 
-        // CrÃ©er l'agence
         $agencyId = $this->agencyModel->create([
             'name'  => $data['agency_name'],
             'slug'  => $data['agency_slug'],
             'email' => $data['email'],
         ]);
 
-        // CrÃ©er l'admin
         $userId = $this->userModel->create([
             'agency_id'  => $agencyId,
             'first_name' => $data['first_name'],
@@ -78,13 +76,13 @@ class AuthController extends BaseController
                 'role'       => 'admin',
                 'agency_id'  => $agencyId,
             ],
-        ], 'Inscription rÃ©ussie', 201);
+        ], 'Inscription réussie', 201);
 
         LogService::log(
             $agencyId,
             $userId,
             'register',
-            "CrÃ©ation du compte agence {$data['agency_name']}"
+            "Création du compte agence {$data['agency_name']}"
         );
     }
 
@@ -95,7 +93,6 @@ class AuthController extends BaseController
     {
         $data = $request->all();
 
-        // â”€â”€ RÃ©soudre l'agencyId depuis le slug â”€â”€
         $slug = $request->getHeader('x-agency-slug')
             ?? $data['slug']
             ?? null;
@@ -118,13 +115,12 @@ class AuthController extends BaseController
         }
 
         if (!(bool) $agency['is_active']) {
-            Response::error('Ce compte agence est dÃ©sactivÃ©', 403);
+            Response::error('Ce compte agence est désactivé', 403);
             exit;
         }
 
         $request->agencyId = (int) $agency['id'];
 
-        // â”€â”€ Rate limiting â”€â”€
         $ip  = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
         $key = "login:{$ip}";
 
@@ -138,7 +134,7 @@ class AuthController extends BaseController
                 "Tentative de brute force depuis {$ip}"
             );
             Response::error(
-                "Trop de tentatives. RÃ©essayez dans {$retryAfter} secondes.",
+                "Trop de tentatives. Réessayez dans {$retryAfter} secondes.",
                 429
             );
             exit;
@@ -150,7 +146,7 @@ class AuthController extends BaseController
         ]);
 
         if (!empty($errors)) {
-            Response::error('DonnÃ©es invalides', 422, $errors);
+            Response::error('Données invalides', 422, $errors);
             exit;
         }
 
@@ -164,14 +160,14 @@ class AuthController extends BaseController
                 $request->agencyId,
                 0,
                 'login_failed',
-                "Ã‰chec connexion pour : {$data['email']}"
+                "Échec connexion pour : {$data['email']}"
             );
             Response::unauthorized('Email ou mot de passe incorrect');
             exit;
         }
 
         if (!(bool) $user['is_active']) {
-            Response::forbidden('Votre compte a Ã©tÃ© dÃ©sactivÃ©');
+            Response::forbidden('Votre compte a été désactivé');
             exit;
         }
 
@@ -201,7 +197,7 @@ class AuthController extends BaseController
                 'role'       => $user['role'],
                 'agency_id'  => $user['agency_id'],
             ],
-        ], 'Connexion rÃ©ussie');
+        ], 'Connexion réussie');
     }
 
     /**
@@ -228,6 +224,6 @@ class AuthController extends BaseController
      */
     public function logout(Request $request): void
     {
-        Response::json(null, 'DÃ©connexion rÃ©ussie');
+        Response::json(null, 'Déconnexion réussie');
     }
 }

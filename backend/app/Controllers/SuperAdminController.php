@@ -41,7 +41,7 @@ class SuperAdminController extends BaseController
         ]);
 
         if (!empty($errors)) {
-            Response::error('DonnÃ©es invalides', 422, $errors);
+            Response::error('Données invalides', 422, $errors);
         }
 
         $superAdmin = $this->superAdminModel->findByEmail($data['email']);
@@ -51,7 +51,7 @@ class SuperAdminController extends BaseController
         }
 
         if (!(bool) $superAdmin['is_active']) {
-            Response::forbidden('Compte dÃ©sactivÃ©');
+            Response::forbidden('Compte désactivé');
         }
 
         $this->superAdminModel->updateLastLogin($superAdmin['id']);
@@ -72,7 +72,7 @@ class SuperAdminController extends BaseController
                 'email'      => $superAdmin['email'],
                 'type'       => 'super_admin',
             ],
-        ], 'Connexion Super Admin rÃ©ussie');
+        ], 'Connexion Super Admin réussie');
 
     }
 
@@ -104,59 +104,75 @@ class SuperAdminController extends BaseController
     }
 
     /**
-     * GET /api/super/agencies/{id}
-     * DÃ©tails complets d'une agence
-     */
-    public function showAgency(Request $request, array $params): void
-    {
-        SuperAdminMiddleware::handle($request);
-        $id     = $this->validateId($params['id']);
-        $agency = $this->agencyModel->findById($id);
+ * GET /api/super/agencies/{id}
+ * Détails complets d'une agence
+ */
+public function showAgency(Request $request, array $params): void
+{
+    SuperAdminMiddleware::handle($request);
+    $id = $this->validateId($params['id']);
+    $agency = $this->agencyModel->findById($id);
 
-        if ($agency === null) {
-            Response::notFound('Agence introuvable');
-        }
-
-        // RÃ©cupÃ©rer les users, biens et contrats de l'agence
-        $pdo = Database::getInstance();
-
-        $users = $pdo->prepare(
-            'SELECT id, first_name, last_name, email, role, is_active, created_at
-             FROM users WHERE agency_id = ? AND deleted_at IS NULL
-             ORDER BY created_at DESC'
-        );
-        $users->execute([$id]);
-
-        $properties = $pdo->prepare(
-            'SELECT id, title, type, city, rent_amount, status
-             FROM properties WHERE agency_id = ? AND deleted_at IS NULL
-             ORDER BY created_at DESC LIMIT 10'
-        );
-        $properties->execute([$id]);
-
-        $contracts = $pdo->prepare(
-            'SELECT c.id, c.rent_amount, c.status, c.start_date,
-                    p.title AS property_title,
-                    CONCAT(t.first_name," ",t.last_name) AS tenant_name
-             FROM contracts c
-             LEFT JOIN properties p ON p.id = c.property_id
-             LEFT JOIN tenants    t ON t.id = c.tenant_id
-             WHERE c.agency_id = ? AND c.deleted_at IS NULL
-             ORDER BY c.created_at DESC LIMIT 10'
-        );
-        $contracts->execute([$id]);
-
-        Response::json([
-            'agency'     => $agency,
-            'users'      => $users->fetchAll(),
-            'properties' => $properties->fetchAll(),
-            'contracts'  => $contracts->fetchAll(),
-        ]);
+    if ($agency === null) {
+        Response::notFound('Agence introuvable');
     }
+
+    $pdo = Database::getInstance();
+
+    // Requête users simplifiée
+    $users = $pdo->prepare("
+        SELECT id, first_name, last_name, email, role, is_active, created_at
+        FROM users 
+        WHERE agency_id = ? AND deleted_at IS NULL
+        ORDER BY created_at DESC
+    ");
+    $users->execute([$id]);
+
+    // Requête properties simplifiée
+    $properties = $pdo->prepare("
+        SELECT id, title, type, city, rent_amount, status
+        FROM properties 
+        WHERE agency_id = ? AND deleted_at IS NULL
+        ORDER BY created_at DESC LIMIT 10
+    ");
+    $properties->execute([$id]);
+
+    // Requête contracts corrigée - sans CONCAT problématique
+    $contracts = $pdo->prepare("
+        SELECT c.id, c.rent_amount, c.status, c.start_date,
+               p.title AS property_title,
+               t.first_name AS tenant_first_name,
+               t.last_name AS tenant_last_name
+        FROM contracts c
+        LEFT JOIN properties p ON p.id = c.property_id
+        LEFT JOIN tenants t ON t.id = c.tenant_id
+        WHERE c.agency_id = ? AND c.deleted_at IS NULL
+        ORDER BY c.created_at DESC LIMIT 10
+    ");
+    $contracts->execute([$id]);
+
+    // Récupération des résultats
+    $usersList = $users->fetchAll();
+    $propertiesList = $properties->fetchAll();
+    $contractsList = $contracts->fetchAll();
+
+    // Ajouter le nom complet du locataire après récupération
+    foreach ($contractsList as &$contract) {
+        $contract['tenant_name'] = trim($contract['tenant_first_name'] . ' ' . $contract['tenant_last_name']);
+        unset($contract['tenant_first_name'], $contract['tenant_last_name']);
+    }
+
+    Response::json([
+        'agency' => $agency,
+        'users' => $usersList,
+        'properties' => $propertiesList,
+        'contracts' => $contractsList,
+    ]);
+}
 
     /**
      * POST /api/super/agencies
-     * CrÃ©er une agence + son admin depuis le Super Admin
+     * Créer une agence + son admin depuis le Super Admin
      */
     public function createAgency(Request $request): void
     {
@@ -169,25 +185,26 @@ class SuperAdminController extends BaseController
             'last_name'   => 'required|max:100',
             'email'       => 'required|email|max:150',
             'password'    => 'required|min:8',
-            'plan'        => 'in:free,starter,pro',
+            'plan'        => 'in:free,starter,pro,premium,basic,enterprise',
         ]);
 
         if (!empty($errors)) {
-            Response::error('DonnÃ©es invalides', 422, $errors);
+            Response::error('Données invalides', 422, $errors);
         }
 
         if ($this->agencyModel->slugExists($data['agency_slug'])) {
-            Response::error('Ce slug est dÃ©jÃ  pris', 409);
+            Response::error('Ce slug est déjà pris', 409);
         }
 
-        // CrÃ©er l'agence
+        // Créer l'agence
         $agencyId = $this->agencyModel->create([
             'name'  => $data['agency_name'],
             'slug'  => $data['agency_slug'],
             'email' => $data['email'],
+            'plan'  => $data['plan'] ?? 'free',
         ]);
 
-        // Mettre Ã  jour le plan si spÃ©cifiÃ©
+        // Mettre à jour le plan si spécifié
         if (!empty($data['plan'])) {
             $this->agencyModel->update($agencyId, [
                 'name'  => $data['agency_name'],
@@ -196,7 +213,7 @@ class SuperAdminController extends BaseController
             ]);
         }
 
-        // CrÃ©er l'admin de l'agence
+        // Créer l'admin de l'agence
         $userId = $this->userModel->create([
             'agency_id'  => $agencyId,
             'first_name' => $data['first_name'],
@@ -210,12 +227,12 @@ class SuperAdminController extends BaseController
             'agency_id' => $agencyId,
             'user_id'   => $userId,
             'agency'    => $this->agencyModel->findById($agencyId),
-        ], 'Agence crÃ©Ã©e avec succÃ¨s', 201);
+        ], 'Agence créée avec succès', 201);
 
         LogService::logSuperAdmin(
             $superAdmin['id'],
             'create_agency',
-            "CrÃ©ation agence : {$data['agency_name']}",
+            "Création agence : {$data['agency_name']}",
             $agencyId
         );
     }
@@ -230,13 +247,13 @@ class SuperAdminController extends BaseController
         $id     = $this->validateId($params['id']);
         $data   = $request->all();
         $errors = ValidationService::validate($data, [
-            'name'  => 'required|max:150',
-            'email' => 'required|email',
-            'plan'  => 'in:free,starter,pro',
+            'name'  => 'max:150',
+            'email' => 'email',
+            'plan'  => 'in:free,starter,pro,premium,basic,enterprise',
         ]);
 
         if (!empty($errors)) {
-            Response::error('DonnÃ©es invalides', 422, $errors);
+            Response::error('Données invalides', 422, $errors);
         }
 
         if ($this->agencyModel->findById($id) === null) {
@@ -244,12 +261,12 @@ class SuperAdminController extends BaseController
         }
 
         $this->agencyModel->update($id, $data);
-        Response::json($this->agencyModel->findById($id), 'Agence mise Ã  jour');
+        Response::json($this->agencyModel->findById($id), 'Agence mise à jour');
     }
 
     /**
      * PUT /api/super/agencies/{id}/toggle
-     * Activer / DÃ©sactiver une agence
+     * Activer / Désactiver une agence
      */
     public function toggleAgency(Request $request, array $params): void
     {
@@ -261,13 +278,13 @@ class SuperAdminController extends BaseController
         }
 
         $agency = $this->agencyModel->findById($id);
-        $status = $agency['is_active'] ? 'activÃ©e' : 'dÃ©sactivÃ©e';
+        $status = $agency['is_active'] ? 'activée' : 'désactivée';
         Response::json($agency, "Agence {$status}");
 
         LogService::logSuperAdmin(
             $superAdmin['id'],
             'toggle_agency',
-            "Agence {$id} : " . ($agency['is_active'] ? 'activÃ©e' : 'dÃ©sactivÃ©e'),
+            "Agence {$id} : " . ($agency['is_active'] ? 'activée' : 'désactivée'),
             $id
         );
     }
@@ -292,11 +309,11 @@ class SuperAdminController extends BaseController
         $pdo->prepare('UPDATE agencies SET is_active = 0 WHERE id = ?')
             ->execute([$id]);
 
-        // DÃ©sactiver tous les users de l'agence
+        // Désactiver tous les users de l'agence
         $pdo->prepare('UPDATE users SET is_active = 0 WHERE agency_id = ?')
             ->execute([$id]);
 
-        Response::json(null, 'Agence supprimÃ©e');
+        Response::json(null, 'Agence supprimée');
 
         LogService::logSuperAdmin(
             $superAdmin['id'],
@@ -308,7 +325,7 @@ class SuperAdminController extends BaseController
 
     /**
      * PUT /api/super/agencies/{id}/reset-password
-     * RÃ©initialiser le mot de passe de l'admin d'une agence
+     * Réinitialiser le mot de passe de l'admin d'une agence
      */
     public function resetAdminPassword(Request $request, array $params): void
     {
@@ -320,7 +337,7 @@ class SuperAdminController extends BaseController
         ]);
 
         if (!empty($errors)) {
-            Response::error('DonnÃ©es invalides', 422, $errors);
+            Response::error('Données invalides', 422, $errors);
         }
 
         $pdo  = Database::getInstance();
@@ -328,23 +345,23 @@ class SuperAdminController extends BaseController
         // Trouver l'admin de l'agence
         $stmt = $pdo->prepare(
             'SELECT id FROM users
-             WHERE agency_id = ? AND role = "admin"
+             WHERE agency_id = ? AND role = ?
                AND deleted_at IS NULL
              LIMIT 1'
         );
-        $stmt->execute([$id]);
+        $stmt->execute([$id, 'admin']);
         $admin = $stmt->fetch();
 
         if (!$admin) {
             Response::notFound('Admin de l\'agence introuvable');
         }
 
-        // Mettre Ã  jour le mot de passe
+        // Mettre à jour le mot de passe
         $hash = password_hash($data['password'], PASSWORD_BCRYPT, ['cost' => 12]);
         $pdo->prepare('UPDATE users SET password = ? WHERE id = ?')
             ->execute([$hash, $admin['id']]);
 
-        Response::json(null, 'Mot de passe rÃ©initialisÃ©');
+        Response::json(null, 'Mot de passe réinitialisé');
     }
 
     /**
@@ -353,34 +370,34 @@ class SuperAdminController extends BaseController
      */
     public function changePlan(Request $request, array $params): void
     {
-    $superAdmin = SuperAdminMiddleware::handle($request);
-    $id         = $this->validateId($params['id']);
-    $data       = $request->all();
+        $superAdmin = SuperAdminMiddleware::handle($request);
+        $id         = $this->validateId($params['id']);
+        $data       = $request->all();
 
-    if (empty($data['plan'])) {
-        Response::error('Plan requis', 422);
-    }
+        if (empty($data['plan'])) {
+            Response::error('Plan requis', 422);
+        }
 
-    $billing = new BillingService();
-    $changed = $billing->changePlan($id, $data['plan']);
+        $billing = new BillingService();
+        $changed = $billing->changePlan($id, $data['plan']);
 
-    if (!$changed) {
-        Response::error('Plan introuvable', 404);
-    }
+        if (!$changed) {
+            Response::error('Plan introuvable', 404);
+        }
 
-    // Mettre aussi Ã  jour le champ plan dans agencies
-    $pdo = \App\Core\Database::getInstance();
-    $pdo->prepare(
-        'UPDATE agencies SET plan = ? WHERE id = ?'
-    )->execute([$data['plan'], $id]);
+        // Mettre aussi à jour le champ plan dans agencies
+        $pdo = \App\Core\Database::getInstance();
+        $pdo->prepare(
+            'UPDATE agencies SET plan = ? WHERE id = ?'
+        )->execute([$data['plan'], $id]);
 
-    LogService::logSuperAdmin(
-        $superAdmin['id'],
-        'change_plan',
-        "Plan agence ID {$id} changÃ© en : {$data['plan']}",
-        $id
-    );
+        LogService::logSuperAdmin(
+            $superAdmin['id'],
+            'change_plan',
+            "Plan agence ID {$id} changé en : {$data['plan']}",
+            $id
+        );
 
-    Response::json(null, 'Plan mis Ã  jour');
+        Response::json(null, 'Plan mis à jour');
     }
 }

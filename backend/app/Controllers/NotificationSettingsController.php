@@ -32,9 +32,9 @@ class NotificationSettingsController extends BaseController
         );
 
         if ($sent) {
-            Response::json(null, 'Email envoyÃ© avec succÃ¨s');
+            Response::json(null, 'Email envoyé avec succès');
         } else {
-            Response::error('Erreur envoi email â€” vÃ©rifiez votre configuration SMTP', 500);
+            Response::error('Erreur envoi email — vérifiez votre configuration SMTP', 500);
         }
     }
 
@@ -48,18 +48,18 @@ class NotificationSettingsController extends BaseController
         $data = $request->all();
 
         if (empty($data['phone'])) {
-            Response::error('NumÃ©ro requis', 422);
+            Response::error('Numéro requis', 422);
         }
 
         $sent = SmsService::send(
             $data['phone'],
-            'Test SMS Lokimmo â€” Votre configuration SMS fonctionne !'
+            'Test SMS Lokimmo — Votre configuration SMS fonctionne !'
         );
 
         if ($sent) {
-            Response::json(null, 'SMS envoyÃ© avec succÃ¨s');
+            Response::json(null, 'SMS envoyé avec succès');
         } else {
-            Response::error('Erreur envoi SMS â€” vÃ©rifiez votre configuration', 500);
+            Response::error('Erreur envoi SMS — vérifiez votre configuration', 500);
         }
     }
 }

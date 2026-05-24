@@ -34,7 +34,6 @@ class OnlinePaymentController extends BaseController
             Response::error('payment_id requis', 422);
         }
 
-        // RÃ©cupÃ©rer le paiement
         $stmt = $this->db->prepare(
             'SELECT py.*, t.first_name, t.last_name, t.email, t.phone,
                     p.title AS property_title,
@@ -53,10 +52,9 @@ class OnlinePaymentController extends BaseController
 
         if (!$payment) Response::notFound('Paiement introuvable');
         if ($payment['status'] === 'paid') {
-            Response::error('Ce paiement est dÃ©jÃ  rÃ©glÃ©', 400);
+            Response::error('Ce paiement est déjà réglé', 400);
         }
 
-        // GÃ©nÃ©rer un ID transaction unique
         $transactionId = 'LK-' . $request->agencyId . '-' . $data['payment_id'] . '-' . time();
 
         $amount      = (float) $payment['amount_due'];
@@ -68,7 +66,6 @@ class OnlinePaymentController extends BaseController
         $notifyUrl = env('BACKEND_URL', 'http://localhost/lokimmo/backend/public')
             . '/api/online-payments/notify';
 
-        // Initier avec CinetPay
         $result = $this->cinetpay->initiatePayment(
             $transactionId,
             $amount,
@@ -85,13 +82,12 @@ class OnlinePaymentController extends BaseController
             Response::error('Impossible d\'initialiser le paiement CinetPay', 500);
         }
 
-        // Enregistrer en base
         $this->db->prepare(
             'INSERT INTO online_payments
                 (agency_id, payment_id, contract_id, tenant_id,
                  amount, description, provider, provider_token,
                  checkout_url, metadata)
-             VALUES (?, ?, ?, ?, ?, ?, "cinetpay", ?, ?, ?)'
+             VALUES (?, ?, ?, ?, ?, ?, \'cinetpay\', ?, ?, ?)'
         )->execute([
             $request->agencyId,
             $payment['id'],
@@ -108,18 +104,18 @@ class OnlinePaymentController extends BaseController
             $request->agencyId,
             $user['id'],
             'initiate_online_payment',
-            "Paiement CinetPay initiÃ© : {$amount} FCFA"
+            "Paiement CinetPay initié : {$amount} FCFA"
         );
 
         Response::json([
             'transaction_id' => $transactionId,
             'payment_url'    => $result['payment_url'],
-        ], 'Paiement initiÃ©');
+        ], 'Paiement initié');
     }
 
     /**
      * POST /api/online-payments/verify
-     * VÃ©rifier aprÃ¨s retour utilisateur
+     * Vérifier après retour utilisateur
      */
     public function verify(Request $request): void
     {
@@ -132,10 +128,9 @@ class OnlinePaymentController extends BaseController
         $result = $this->cinetpay->checkPayment($data['transaction_id']);
 
         if (!$result) {
-            Response::error('Impossible de vÃ©rifier le paiement', 500);
+            Response::error('Impossible de vérifier le paiement', 500);
         }
 
-        // RÃ©cupÃ©rer la transaction en base
         $stmt = $this->db->prepare(
             'SELECT * FROM online_payments WHERE provider_token = ? LIMIT 1'
         );
@@ -159,19 +154,17 @@ class OnlinePaymentController extends BaseController
 
     /**
      * POST /api/online-payments/notify
-     * Webhook CinetPay â€” appelÃ© automatiquement par CinetPay
+     * Webhook CinetPay — appelé automatiquement par CinetPay
      */
     public function notify(Request $request): void
     {
-        $transactionId = $_POST['cpm_trans_id']   ?? $request->input('cpm_trans_id');
-        $status        = $_POST['cpm_result']      ?? $request->input('cpm_result');
+        $transactionId = $_POST['cpm_trans_id'] ?? $request->input('cpm_trans_id');
 
         if (empty($transactionId)) {
             http_response_code(400);
             echo 'KO'; exit;
         }
 
-        // VÃ©rifier avec l'API
         $result = $this->cinetpay->checkPayment($transactionId);
 
         if ($result && $result['is_paid']) {
@@ -198,7 +191,7 @@ class OnlinePaymentController extends BaseController
 
         $stmt = $this->db->prepare(
             'SELECT op.*,
-                    CONCAT(t.first_name, " ", t.last_name) AS tenant_name,
+                    CONCAT(t.first_name, \' \', t.last_name) AS tenant_name,
                     p.title AS property_title
              FROM online_payments op
              LEFT JOIN contracts  c ON c.id = op.contract_id
@@ -214,30 +207,27 @@ class OnlinePaymentController extends BaseController
     }
 
     /**
-     * Marquer un paiement comme rÃ©glÃ©
+     * Marquer un paiement comme réglé
      */
     private function markAsPaid(array $onlinePayment, string $transactionId): void
     {
-        // Mettre Ã  jour online_payments
         $this->db->prepare(
             'UPDATE online_payments
-             SET status = "completed", paid_at = NOW()
+             SET status = \'completed\', paid_at = NOW()
              WHERE provider_token = ?'
         )->execute([$transactionId]);
 
-        // Mettre Ã  jour payments
         if ($onlinePayment['payment_id']) {
             $this->db->prepare(
                 'UPDATE payments
-                 SET status         = "paid",
+                 SET status         = \'paid\',
                      amount_paid    = amount_due,
                      payment_date   = NOW(),
-                     payment_method = "mobile_money"
+                     payment_method = \'mobile_money\'
                  WHERE id = ?'
             )->execute([$onlinePayment['payment_id']]);
         }
 
-        // Email confirmation locataire
         try {
             $stmt = $this->db->prepare(
                 'SELECT t.first_name, t.last_name, t.email, t.phone,

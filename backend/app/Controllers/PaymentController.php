@@ -38,7 +38,7 @@ class PaymentController extends BaseController
 
         $countStmt = $this->db->prepare(
             'SELECT COUNT(*) FROM payments
-            WHERE agency_id = ? AND deleted_at IS NULL'
+             WHERE agency_id = ? AND deleted_at IS NULL'
         );
         $countStmt->execute([$request->agencyId]);
         $total = (int) $countStmt->fetchColumn();
@@ -85,10 +85,9 @@ class PaymentController extends BaseController
         ]);
 
         if (!empty($errors)) {
-            Response::error('DonnÃ©es invalides', 422, $errors);
+            Response::error('Données invalides', 422, $errors);
         }
 
-        // VÃ©rifier que le contrat appartient Ã  l'agence
         if (!$this->contractModel->belongsToAgency(
             (int) $data['contract_id'],
             $request->agencyId
@@ -100,7 +99,6 @@ class PaymentController extends BaseController
             array_merge($data, ['agency_id' => $request->agencyId])
         );
 
-        // Sync caisse si payÃ© directement Ã  la crÃ©ation
         if (($data['status'] ?? '') === 'paid') {
             CashSyncService::syncPayment(
                 (int) $id,
@@ -113,14 +111,14 @@ class PaymentController extends BaseController
             $request->agencyId,
             $user['id'],
             'create_payment',
-            "Paiement crÃ©Ã© â€” contrat ID {$data['contract_id']}",
+            "Paiement créé — contrat ID {$data['contract_id']}",
             'payment',
             (int) $id
         );
 
         Response::json(
             $this->paymentModel->findById($id, $request->agencyId),
-            'Paiement enregistrÃ©',
+            'Paiement enregistré',
             201
         );
     }
@@ -138,14 +136,13 @@ class PaymentController extends BaseController
         ]);
 
         if (!empty($errors)) {
-            Response::error('DonnÃ©es invalides', 422, $errors);
+            Response::error('Données invalides', 422, $errors);
         }
 
         if (!$this->paymentModel->belongsToAgency($id, $request->agencyId)) {
             Response::notFound('Paiement introuvable');
         }
 
-        // 1. RÃ©cupÃ©rer l'ancien statut AVANT update
         $stmt = $this->db->prepare(
             'SELECT status FROM payments WHERE id = ? LIMIT 1'
         );
@@ -153,12 +150,10 @@ class PaymentController extends BaseController
         $oldPayment = $stmt->fetch() ?: [];
         $oldStatus  = $oldPayment['status'] ?? '';
 
-        // 2. Faire l'update
         $this->paymentModel->update($id, $request->agencyId, $data);
 
         $newStatus = $data['status'] ?? '';
 
-        // 3. Sync caisse â€” payÃ© pour la premiÃ¨re fois
         if ($newStatus === 'paid' && $oldStatus !== 'paid') {
             CashSyncService::syncPayment(
                 $id,
@@ -167,12 +162,10 @@ class PaymentController extends BaseController
             );
         }
 
-        // 4. DÃ©sync caisse â€” remis en attente
         if ($oldStatus === 'paid' && $newStatus !== 'paid') {
             CashSyncService::unsyncPayment($id);
         }
 
-        // 5. Email confirmation si nouveau statut = paid
         if ($newStatus === 'paid' && $oldStatus !== 'paid') {
             try {
                 $stmt2 = $this->db->prepare(
@@ -214,19 +207,18 @@ class PaymentController extends BaseController
             }
         }
 
-        // 6. Log AVANT Response
         LogService::log(
             $request->agencyId,
             $user['id'],
             'update_payment',
-            "Paiement ID {$id} mis Ã  jour â€” statut : {$newStatus}",
+            "Paiement ID {$id} mis à jour — statut : {$newStatus}",
             'payment',
             $id
         );
 
         Response::json(
             $this->paymentModel->findById($id, $request->agencyId),
-            'Paiement mis Ã  jour'
+            'Paiement mis à jour'
         );
     }
 
@@ -240,19 +232,18 @@ class PaymentController extends BaseController
             Response::notFound('Paiement introuvable');
         }
 
-        // DÃ©sync caisse avant suppression
         CashSyncService::unsyncPayment($id);
 
         LogService::log(
             $request->agencyId,
             $user['id'],
             'delete_payment',
-            "Paiement ID {$id} supprimÃ©",
+            "Paiement ID {$id} supprimé",
             'payment',
             $id
         );
 
         $this->paymentModel->softDelete($id, $request->agencyId);
-        Response::json(null, 'Paiement supprimÃ©');
+        Response::json(null, 'Paiement supprimé');
     }
 }

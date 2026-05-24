@@ -32,15 +32,15 @@ class ScoreController extends BaseController
             $request->agencyId,
             $request->user['id'],
             'calculate_score',
-            "Score calculÃ© pour locataire ID {$id} : {$score}/100"
+            "Score calculé pour locataire ID {$id} : {$score}/100"
         );
 
-        Response::json(['score' => $score], "Score calculÃ© : {$score}/100");
+        Response::json(['score' => $score], "Score calculé : {$score}/100");
     }
 
     /**
      * GET /api/scores/detail/{id}
-     * DÃ©tail du score d'un locataire
+     * Détail du score d'un locataire
      */
     public function detail(Request $request, array $params): void
     {
@@ -48,7 +48,6 @@ class ScoreController extends BaseController
         $id     = $this->validateId($params['id']);
         $detail = $this->scoreService->getDetail($id, $request->agencyId);
 
-        // Calculer le total
         $total = array_sum([
             $detail['payment_history'],
             $detail['income_ratio'],
@@ -82,6 +81,6 @@ class ScoreController extends BaseController
         Response::json([
             'updated' => count($results),
             'scores'  => $results,
-        ], count($results) . ' scores mis Ã  jour');
+        ], count($results) . ' scores mis à jour');
     }
 }
