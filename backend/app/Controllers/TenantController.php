@@ -46,7 +46,7 @@ class TenantController extends BaseController
     // POST /api/tenants
     public function store(Request $request): void
     {
-        $user = $this->authenticate($request);
+        $user   = $this->authenticate($request);
         $data   = $request->all();
         $errors = ValidationService::validate($data, [
             'first_name' => 'required|max:100',
@@ -56,10 +56,9 @@ class TenantController extends BaseController
         ]);
 
         if (!empty($errors)) {
-            Response::error('DonnÃ©es invalides', 422, $errors);
+            Response::error('Données invalides', 422, $errors);
         }
 
-        // â”€â”€ VÃ©rification limite plan â”€â”€
         $billing = new BillingService();
         $check   = $billing->canAddTenant($request->agencyId);
 
@@ -74,11 +73,9 @@ class TenantController extends BaseController
             array_merge($data, ['agency_id' => $request->agencyId])
         );
 
-
-
         Response::json(
             $this->tenantModel->findById($id, $request->agencyId),
-            'Locataire crÃ©Ã©',
+            'Locataire créé',
             201
         );
     }
@@ -90,14 +87,14 @@ class TenantController extends BaseController
         $id     = $this->validateId($params['id']);
         $data   = $request->all();
         $errors = ValidationService::validate($data, [
-            'first_name' => 'required|max:100',
-            'last_name'  => 'required|max:100',
-            'email'      => 'email|max:150',
-            'phone'      => 'max:20',
+            'first_name' => 'sometimes|max:100',
+            'last_name'  => 'sometimes|max:100',
+            'email'      => 'sometimes|email|max:150',
+            'phone'      => 'sometimes|max:20',
         ]);
 
         if (!empty($errors)) {
-            Response::error('DonnÃ©es invalides', 422, $errors);
+            Response::error('Données invalides', 422, $errors);
         }
 
         if (!$this->tenantModel->belongsToAgency($id, $request->agencyId)) {
@@ -108,7 +105,7 @@ class TenantController extends BaseController
 
         Response::json(
             $this->tenantModel->findById($id, $request->agencyId),
-            'Locataire mis Ã  jour'
+            'Locataire mis à jour'
         );
     }
 
@@ -123,7 +120,7 @@ class TenantController extends BaseController
         }
 
         $this->tenantModel->softDelete($id, $request->agencyId);
-        Response::json(null, 'Locataire supprimÃ©');
+        Response::json(null, 'Locataire supprimé');
     }
 
     public function setupPortal(Request $request, array $params): void
@@ -137,7 +134,7 @@ class TenantController extends BaseController
         ]);
 
         if (!empty($errors)) {
-            Response::error('DonnÃ©es invalides', 422, $errors);
+            Response::error('Données invalides', 422, $errors);
         }
 
         if (!$this->tenantModel->belongsToAgency($id, $request->agencyId)) {
@@ -147,14 +144,14 @@ class TenantController extends BaseController
         $pdo  = \App\Core\Database::getInstance();
         $stmt = $pdo->prepare(
             'UPDATE tenants
-            SET portal_email    = :email,
-                portal_password = :password,
-                portal_active   = 1
-            WHERE id = :id AND agency_id = :agency_id'
+             SET portal_email    = :email,
+                 portal_password = :password,
+                 portal_active   = 1
+             WHERE id = :id AND agency_id = :agency_id'
         );
         $stmt->execute([
             ':email'     => $data['portal_email'],
-            ':password' => password_hash($data['portal_password'], PASSWORD_BCRYPT),
+            ':password'  => password_hash($data['portal_password'], PASSWORD_BCRYPT),
             ':id'        => $id,
             ':agency_id' => $request->agencyId,
         ]);
@@ -163,18 +160,16 @@ class TenantController extends BaseController
             $request->agencyId,
             $request->user['id'],
             'setup_portal',
-            "AccÃ¨s portail activÃ© pour locataire ID {$id}"
+            "Accès portail activé pour locataire ID {$id}"
         );
 
-        // RÃ©cupÃ©rer les infos agence + locataire pour l'email
-        $pdo2   = \App\Core\Database::getInstance();
-        $tenant = $pdo2->prepare(
+        $tenant = $pdo->prepare(
             'SELECT * FROM tenants WHERE id = ? LIMIT 1'
         );
         $tenant->execute([$id]);
         $tenantData = $tenant->fetch() ?: [];
 
-        $agency = $pdo2->prepare(
+        $agency = $pdo->prepare(
             'SELECT * FROM agencies WHERE id = ? LIMIT 1'
         );
         $agency->execute([$request->agencyId]);
@@ -182,20 +177,19 @@ class TenantController extends BaseController
 
         $slug = $agencyData['slug'] ?? '';
 
-        // Envoyer email avec identifiants
         NotificationMailService::sendPortalAccess(
             $tenantData,
-            $data['portal_password'], // mot de passe en clair avant hachage
+            $data['portal_password'],
             $slug,
             $agencyData
         );
 
-        Response::json(null, 'AccÃ¨s portail activÃ©');
+        Response::json(null, 'Accès portail activé');
     }
 
     /**
      * DELETE /api/tenants/{id}/portal
-     * DÃ©sactiver l'accÃ¨s portail
+     * Désactiver l'accès portail
      */
     public function disablePortal(Request $request, array $params): void
     {
@@ -207,6 +201,6 @@ class TenantController extends BaseController
             'UPDATE tenants SET portal_active = 0 WHERE id = ? AND agency_id = ?'
         )->execute([$id, $request->agencyId]);
 
-        Response::json(null, 'AccÃ¨s portail dÃ©sactivÃ©');
+        Response::json(null, 'Accès portail désactivé');
     }
 }

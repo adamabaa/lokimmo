@@ -14,7 +14,14 @@ class ValidationService
             $fieldRules = explode('|', $ruleString);
             $value      = $data[$field] ?? null;
 
+            // Si "sometimes" est présent et que le champ est absent → on skip
+            if (in_array('sometimes', $fieldRules) && !array_key_exists($field, $data)) {
+                continue;
+            }
+
             foreach ($fieldRules as $rule) {
+                if ($rule === 'sometimes') continue; // on ignore la règle elle-même
+
                 $error = self::applyRule($field, $value, $rule, $data);
                 if ($error !== null) {
                     $errors[$field][] = $error;

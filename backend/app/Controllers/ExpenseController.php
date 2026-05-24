@@ -43,13 +43,6 @@ class ExpenseController extends BaseController
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
 
-        $sql = 'SELECT e.*,
-               p.title AS property_title,
-               p.city  AS property_city
-        FROM property_expenses e
-        LEFT JOIN properties p ON p.id = e.property_id
-        WHERE e.agency_id = ? AND e.deleted_at IS NULL';
-
         Response::json($stmt->fetchAll());
     }
 
@@ -69,7 +62,16 @@ class ExpenseController extends BaseController
         ]);
 
         if (!empty($errors)) {
-            Response::error('DonnÃ©es invalides', 422, $errors);
+            Response::error('Données invalides', 422, $errors);
+        }
+
+        // Vérifier que le bien appartient à l'agence avant l'insert
+        $stmt = $this->db->prepare(
+            'SELECT id FROM properties WHERE id = ? AND agency_id = ? AND deleted_at IS NULL'
+        );
+        $stmt->execute([$data['property_id'], $request->agencyId]);
+        if (!$stmt->fetch()) {
+            Response::notFound('Bien introuvable');
         }
 
         $stmt = $this->db->prepare(
@@ -89,22 +91,16 @@ class ExpenseController extends BaseController
 
         $id = $this->db->lastInsertId();
 
-        $stmt = $this->db->prepare(
-            'SELECT id FROM properties WHERE id = ? AND agency_id = ? AND deleted_at IS NULL'
-        );
-        $stmt->execute([$data['property_id'], $request->agencyId]);
-        if (!$stmt->fetch()) Response::notFound('Bien introuvable');
-
         LogService::log(
             $request->agencyId,
             $user['id'],
             'create_expense',
-            "DÃ©pense crÃ©Ã©e : {$data['title']} â€” {$data['amount']} FCFA",
+            "Dépense créée : {$data['title']} — {$data['amount']} FCFA",
             'expense',
             (int) $id
         );
 
-        Response::json(['id' => $id], 'DÃ©pense enregistrÃ©e', 201);
+        Response::json(['id' => $id], 'Dépense enregistrée', 201);
     }
 
     /**
@@ -116,33 +112,45 @@ class ExpenseController extends BaseController
         $id   = $this->validateId($params['id']);
         $data = $request->all();
 
-        $stmt = $this->db->prepare(
-            'UPDATE property_expenses
-             SET title        = :title,
-                 amount       = :amount,
-                 category     = :category,
-                 expense_date = :date,
-                 notes        = :notes
-             WHERE id = :id AND agency_id = :agency_id AND deleted_at IS NULL'
-        );
-        $stmt->execute([
-            ':title'     => $data['title'],
-            ':amount'    => $data['amount'],
-            ':category'  => $data['category'],
-            ':date'      => $data['expense_date'],
-            ':notes'     => $data['notes'] ?? null,
-            ':id'        => $id,
-            ':agency_id' => $request->agencyId,
+        $errors = ValidationService::validate($data, [
+            'title'        => 'sometimes|max:150',
+            'amount'       => 'sometimes',
+            'category'     => 'sometimes',
+            'expense_date' => 'sometimes',
         ]);
+
+        if (!empty($errors)) {
+            Response::error('Données invalides', 422, $errors);
+        }
+
+        $allowed = ['title', 'amount', 'category', 'expense_date', 'notes'];
+        $sets    = [];
+        $params2 = [':id' => $id, ':agency_id' => $request->agencyId];
+
+        foreach ($allowed as $field) {
+            if (array_key_exists($field, $data)) {
+                $sets[]               = "{$field} = :{$field}";
+                $params2[":{$field}"] = $data[$field];
+            }
+        }
+
+        if (empty($sets)) {
+            Response::error('Aucune donnée à mettre à jour', 422);
+        }
+
+        $sql = 'UPDATE property_expenses SET ' . implode(', ', $sets)
+            . ' WHERE id = :id AND agency_id = :agency_id AND deleted_at IS NULL';
+
+        $this->db->prepare($sql)->execute($params2);
 
         LogService::log(
             $request->agencyId,
             $user['id'],
             'update_expense',
-            "DÃ©pense modifiÃ©e ID {$id}"
+            "Dépense modifiée ID {$id}"
         );
 
-        Response::json(null, 'DÃ©pense mise Ã  jour');
+        Response::json(null, 'Dépense mise à jour');
     }
 
     /**
@@ -163,9 +171,9 @@ class ExpenseController extends BaseController
             $request->agencyId,
             $user['id'],
             'delete_expense',
-            "DÃ©pense supprimÃ©e ID {$id}"
+            "Dépense supprimée ID {$id}"
         );
 
-        Response::json(null, 'DÃ©pense supprimÃ©e');
+        Response::json(null, 'Dépense supprimée');
     }
 }

@@ -10,7 +10,7 @@ use App\Models\Agency;
 use App\Services\ValidationService;
 
 /**
- * Gestion du profil de l'agence connectÃ©e
+ * Gestion du profil de l'agence connectée
  */
 class AgencyController extends BaseController
 {
@@ -39,22 +39,21 @@ class AgencyController extends BaseController
 
     /**
      * PUT /api/agency/profile
-     * Mettre Ã  jour le profil de l'agence
+     * Mettre à jour le profil de l'agence
      */
     public function updateProfile(Request $request): void
     {
         $this->requireAdmin($request);
         $data   = $request->all();
         $errors = ValidationService::validate($data, [
-            'name'  => 'required|max:150',
-            'email' => 'required|email|max:150',
+            'name'  => 'sometimes|max:150',
+            'email' => 'sometimes|email|max:150',
         ]);
 
         if (!empty($errors)) {
-            Response::error('DonnÃ©es invalides', 422, $errors);
+            Response::error('Données invalides', 422, $errors);
         }
 
-        // Valider les couleurs hex
         if (!empty($data['primary_color']) && !preg_match('/^#[0-9A-Fa-f]{6}$/', $data['primary_color'])) {
             Response::error('Couleur primaire invalide (format: #RRGGBB)', 422);
         }
@@ -66,7 +65,7 @@ class AgencyController extends BaseController
         $this->agencyModel->updateProfile($request->agencyId, $data);
         $agency = $this->agencyModel->findByIdFull($request->agencyId);
 
-        Response::json($agency, 'Profil mis Ã  jour');
+        Response::json($agency, 'Profil mis à jour');
     }
 
     /**
@@ -78,28 +77,26 @@ class AgencyController extends BaseController
         $this->requireAdmin($request);
 
         if (empty($_FILES['logo'])) {
-            Response::error('Aucun fichier envoyÃ©', 400);
+            Response::error('Aucun fichier envoyé', 400);
         }
 
-        $file      = $_FILES['logo'];
+        $file         = $_FILES['logo'];
         $allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
-        $maxSize   = 2 * 1024 * 1024; // 2MB
+        $maxSize      = 2 * 1024 * 1024; // 2MB
 
         if (!in_array($file['type'], $allowedTypes, true)) {
-            Response::error('Format non autorisÃ© (JPG, PNG, WEBP, SVG uniquement)', 422);
+            Response::error('Format non autorisé (JPG, PNG, WEBP, SVG uniquement)', 422);
         }
 
         if ($file['size'] > $maxSize) {
             Response::error('Fichier trop volumineux (2MB maximum)', 422);
         }
 
-        // CrÃ©er le dossier uploads si nÃ©cessaire
         $uploadDir = BASE_PATH . '/public/uploads/logos/';
         if (!is_dir($uploadDir)) {
             mkdir($uploadDir, 0755, true);
         }
 
-        // GÃ©nÃ©rer un nom unique
         $ext      = pathinfo($file['name'], PATHINFO_EXTENSION);
         $filename = 'agency_' . $request->agencyId . '_' . time() . '.' . $ext;
         $path     = $uploadDir . $filename;
@@ -111,6 +108,6 @@ class AgencyController extends BaseController
         $logoUrl = '/uploads/logos/' . $filename;
         $this->agencyModel->updateLogo($request->agencyId, $logoUrl);
 
-        Response::json(['logo_url' => $logoUrl], 'Logo mis Ã  jour');
+        Response::json(['logo_url' => $logoUrl], 'Logo mis à jour');
     }
 }

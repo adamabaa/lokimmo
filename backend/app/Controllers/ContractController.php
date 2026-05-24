@@ -62,10 +62,9 @@ class ContractController extends BaseController
         ]);
 
         if (!empty($errors)) {
-            Response::error('DonnÃ©es invalides', 422, $errors);
+            Response::error('Données invalides', 422, $errors);
         }
 
-        // VÃ©rifier que le bien appartient Ã  l'agence
         if (!$this->propertyModel->belongsToAgency(
             (int) $data['property_id'],
             $request->agencyId
@@ -73,7 +72,6 @@ class ContractController extends BaseController
             Response::notFound('Bien introuvable');
         }
 
-        // VÃ©rifier que le locataire appartient Ã  l'agence
         if (!$this->tenantModel->belongsToAgency(
             (int) $data['tenant_id'],
             $request->agencyId
@@ -85,14 +83,13 @@ class ContractController extends BaseController
             array_merge($data, ['agency_id' => $request->agencyId])
         );
 
-        // Marquer le bien comme louÃ©
         $this->contractModel->markPropertyAsRented(
             (int) $data['property_id']
         );
 
         Response::json(
             $this->contractModel->findById($id, $request->agencyId),
-            'Contrat crÃ©Ã©',
+            'Contrat créé',
             201
         );
     }
@@ -104,13 +101,13 @@ class ContractController extends BaseController
         $id     = $this->validateId($params['id']);
         $data   = $request->all();
         $errors = ValidationService::validate($data, [
-            'rent_amount' => 'required|numeric',
-            'status'      => 'in:active,expired,terminated',
-            'payment_day' => 'numeric',
+            'rent_amount' => 'sometimes|numeric',
+            'status'      => 'sometimes|in:active,expired,terminated',
+            'payment_day' => 'sometimes|numeric',
         ]);
 
         if (!empty($errors)) {
-            Response::error('DonnÃ©es invalides', 422, $errors);
+            Response::error('Données invalides', 422, $errors);
         }
 
         if (!$this->contractModel->belongsToAgency($id, $request->agencyId)) {
@@ -121,7 +118,7 @@ class ContractController extends BaseController
 
         Response::json(
             $this->contractModel->findById($id, $request->agencyId),
-            'Contrat mis Ã  jour'
+            'Contrat mis à jour'
         );
     }
 
@@ -136,6 +133,6 @@ class ContractController extends BaseController
         }
 
         $this->contractModel->softDelete($id, $request->agencyId);
-        Response::json(null, 'Contrat supprimÃ©');
+        Response::json(null, 'Contrat supprimé');
     }
 }

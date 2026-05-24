@@ -42,10 +42,9 @@ class UserController extends BaseController
         ]);
 
         if (!empty($errors)) {
-            Response::error('DonnÃ©es invalides', 422, $errors);
+            Response::error('Données invalides', 422, $errors);
         }
 
-        // â”€â”€ VÃ©rification limite plan â”€â”€
         $billing = new BillingService();
         $check   = $billing->canAddUser($request->agencyId);
 
@@ -57,7 +56,7 @@ class UserController extends BaseController
         }
 
         if ($this->userModel->emailExists($data['email'], $request->agencyId)) {
-            Response::error('Cet email est dÃ©jÃ  utilisÃ©', 409);
+            Response::error('Cet email est déjà utilisé', 409);
         }
 
         $userId = $this->userModel->create([
@@ -69,10 +68,8 @@ class UserController extends BaseController
             'role'       => $data['role'],
         ]);
 
-
-
         $user = $this->userModel->findById($userId, $request->agencyId);
-        Response::json($user, 'Agent crÃ©Ã© avec succÃ¨s', 201);
+        Response::json($user, 'Agent créé avec succès', 201);
     }
 
     // PUT /api/users/{id}
@@ -82,45 +79,49 @@ class UserController extends BaseController
         $id     = $this->validateId($params['id']);
         $data   = $request->all();
         $errors = ValidationService::validate($data, [
-            'first_name' => 'required|max:100',
-            'last_name'  => 'required|max:100',
-            'email'      => 'required|email|max:150',
-            'role' => 'in:admin,agent,caissier_principal,caissier_secondaire',
+            'first_name' => 'sometimes|max:100',
+            'last_name'  => 'sometimes|max:100',
+            'email'      => 'sometimes|email|max:150',
+            'role'       => 'sometimes|in:admin,agent,caissier_principal,caissier_secondaire',
         ]);
 
         if (!empty($errors)) {
-            Response::error('DonnÃ©es invalides', 422, $errors);
+            Response::error('Données invalides', 422, $errors);
         }
 
         if (!$this->userModel->findById($id, $request->agencyId)) {
             Response::notFound('Utilisateur introuvable');
         }
 
-        if ($this->userModel->emailExists($data['email'], $request->agencyId, $id)) {
-            Response::error('Cet email est dÃ©jÃ  utilisÃ©', 409);
+        // Vérifier email uniquement s'il est envoyé
+        if (isset($data['email']) && $this->userModel->emailExists($data['email'], $request->agencyId, $id)) {
+            Response::error('Cet email est déjà utilisé', 409);
         }
 
-        $pdo  = Database::getInstance();
-        $stmt = $pdo->prepare(
-            'UPDATE users
-             SET first_name = :first_name,
-                 last_name  = :last_name,
-                 email      = :email,
-                 role       = :role
-             WHERE id = :id AND agency_id = :agency_id'
-        );
-        $stmt->execute([
-            ':first_name' => $data['first_name'],
-            ':last_name'  => $data['last_name'],
-            ':email'      => $data['email'],
-            ':role'       => $data['role'],
-            ':id'         => $id,
-            ':agency_id'  => $request->agencyId,
-        ]);
+        $allowed = ['first_name', 'last_name', 'email', 'role'];
+        $sets    = [];
+        $params2 = [':id' => $id, ':agency_id' => $request->agencyId];
+
+        foreach ($allowed as $field) {
+            if (array_key_exists($field, $data)) {
+                $sets[]               = "{$field} = :{$field}";
+                $params2[":{$field}"] = $data[$field];
+            }
+        }
+
+        if (empty($sets)) {
+            Response::error('Aucune donnée à mettre à jour', 422);
+        }
+
+        $pdo = Database::getInstance();
+        $pdo->prepare(
+            'UPDATE users SET ' . implode(', ', $sets)
+            . ' WHERE id = :id AND agency_id = :agency_id AND deleted_at IS NULL'
+        )->execute($params2);
 
         Response::json(
             $this->userModel->findById($id, $request->agencyId),
-            'Agent mis Ã  jour'
+            'Agent mis à jour'
         );
     }
 
@@ -135,9 +136,8 @@ class UserController extends BaseController
             Response::notFound('Utilisateur introuvable');
         }
 
-        // EmpÃªcher de dÃ©sactiver son propre compte
         if ($id === $request->user['id']) {
-            Response::error('Vous ne pouvez pas dÃ©sactiver votre propre compte', 400);
+            Response::error('Vous ne pouvez pas désactiver votre propre compte', 400);
         }
 
         $pdo  = Database::getInstance();
@@ -149,7 +149,7 @@ class UserController extends BaseController
         $stmt->execute([$id, $request->agencyId]);
 
         $updated = $this->userModel->findById($id, $request->agencyId);
-        $status  = $updated['is_active'] ? 'activÃ©' : 'dÃ©sactivÃ©';
+        $status  = $updated['is_active'] ? 'activé' : 'désactivé';
         Response::json($updated, "Compte {$status}");
     }
 
@@ -164,7 +164,7 @@ class UserController extends BaseController
         ]);
 
         if (!empty($errors)) {
-            Response::error('DonnÃ©es invalides', 422, $errors);
+            Response::error('Données invalides', 422, $errors);
         }
 
         if (!$this->userModel->findById($id, $request->agencyId)) {
@@ -177,7 +177,7 @@ class UserController extends BaseController
             'UPDATE users SET password = ? WHERE id = ? AND agency_id = ?'
         )->execute([$hash, $id, $request->agencyId]);
 
-        Response::json(null, 'Mot de passe rÃ©initialisÃ©');
+        Response::json(null, 'Mot de passe réinitialisé');
     }
 
     // DELETE /api/users/{id}
@@ -191,12 +191,11 @@ class UserController extends BaseController
             Response::notFound('Utilisateur introuvable');
         }
 
-        // EmpÃªcher de supprimer son propre compte
         if ($id === $request->user['id']) {
             Response::error('Vous ne pouvez pas supprimer votre propre compte', 400);
         }
 
         $this->userModel->softDelete($id, $request->agencyId);
-        Response::json(null, 'Agent supprimÃ©');
+        Response::json(null, 'Agent supprimé');
     }
 }
