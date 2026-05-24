@@ -32,22 +32,44 @@ class OwnerPortalController extends BaseController
         ]);
 
         if (!empty($errors)) {
-            Response::error('DonnÃ©es invalides', 422, $errors);
+            Response::error('Données invalides', 422, $errors);
+        }
+
+        // Résoudre agency_id depuis le slug (route publique — pas de JWT)
+        $agencyId = $request->agencyId;
+
+        if (!$agencyId) {
+            $slug = $request->getHeader('x-agency-slug');
+            if (!$slug) {
+                Response::error('Agence non identifiée', 400);
+            }
+
+            $stmt = $this->db->prepare(
+                'SELECT id FROM agencies WHERE slug = ? AND is_active = 1 LIMIT 1'
+            );
+            $stmt->execute([$slug]);
+            $agency = $stmt->fetch();
+
+            if (!$agency) {
+                Response::error('Agence introuvable', 404);
+            }
+
+            $agencyId = (int) $agency['id'];
         }
 
         $stmt = $this->db->prepare(
             'SELECT id, agency_id, first_name, last_name,
                     email, portal_email, portal_password, portal_active
-             FROM owners
-             WHERE (portal_email = ? OR email = ?)
-               AND agency_id = ?
-               AND deleted_at IS NULL
-             LIMIT 1'
+            FROM owners
+            WHERE (portal_email = ? OR email = ?)
+            AND agency_id = ?
+            AND deleted_at IS NULL
+            LIMIT 1'
         );
         $stmt->execute([
             $data['email'],
             $data['email'],
-            $request->agencyId,
+            $agencyId,
         ]);
         $owner = $stmt->fetch();
 
@@ -56,7 +78,7 @@ class OwnerPortalController extends BaseController
         }
 
         if (!(bool) $owner['portal_active']) {
-            Response::forbidden('Votre accÃ¨s au portail n\'est pas activÃ©. Contactez votre agence.');
+            Response::forbidden('Votre accès au portail n\'est pas activé. Contactez votre agence.');
         }
 
         if (!password_verify($data['password'], $owner['portal_password'])) {
@@ -77,7 +99,7 @@ class OwnerPortalController extends BaseController
                 'last_name'  => $owner['last_name'],
                 'email'      => $owner['portal_email'] ?? $owner['email'],
             ],
-        ], 'Connexion rÃ©ussie');
+        ], 'Connexion réussie');
     }
 
     /**
@@ -97,7 +119,7 @@ class OwnerPortalController extends BaseController
         $stmt->execute([$auth['id'], $auth['agency_id']]);
         $owner = $stmt->fetch();
 
-        if (!$owner) Response::notFound('PropriÃ©taire introuvable');
+        if (!$owner) Response::notFound('Propriétaire introuvable');
 
         Response::json($owner);
     }
@@ -113,45 +135,40 @@ class OwnerPortalController extends BaseController
         $stmt = $this->db->prepare(
             'SELECT
                 p.*,
-                -- Locataire actif
-                CONCAT(t.first_name, " ", t.last_name) AS tenant_name,
+                CONCAT(t.first_name, \' \', t.last_name) AS tenant_name,
                 t.phone AS tenant_phone,
-                -- Revenus totaux
                 COALESCE((
                     SELECT SUM(py.amount_paid)
                     FROM payments py
                     LEFT JOIN contracts c2 ON c2.id = py.contract_id
                     WHERE c2.property_id = p.id
-                      AND py.status IN ("paid", "partial")
+                      AND py.status IN (\'paid\', \'partial\')
                 ), 0) AS total_revenue,
-                -- Revenus ce mois
                 COALESCE((
                     SELECT SUM(py.amount_paid)
                     FROM payments py
                     LEFT JOIN contracts c3 ON c3.id = py.contract_id
                     WHERE c3.property_id = p.id
-                      AND py.status IN ("paid", "partial")
+                      AND py.status IN (\'paid\', \'partial\')
                       AND py.period_month = MONTH(NOW())
                       AND py.period_year  = YEAR(NOW())
                 ), 0) AS revenue_this_month,
-                -- DÃ©penses totales
                 COALESCE((
                     SELECT SUM(e.amount)
                     FROM property_expenses e
                     WHERE e.property_id = p.id
                       AND e.deleted_at IS NULL
                 ), 0) AS total_expenses,
-                -- Paiements en retard
                 COALESCE((
                     SELECT COUNT(*)
                     FROM payments py
                     LEFT JOIN contracts c4 ON c4.id = py.contract_id
                     WHERE c4.property_id = p.id
-                      AND py.status = "late"
+                      AND py.status = \'late\'
                 ), 0) AS late_payments_count
              FROM properties p
              LEFT JOIN contracts c ON c.property_id = p.id
-               AND c.status = "active" AND c.deleted_at IS NULL
+               AND c.status = \'active\' AND c.deleted_at IS NULL
              LEFT JOIN tenants t ON t.id = c.tenant_id
              WHERE p.owner_id  = ?
                AND p.agency_id = ?
@@ -165,14 +182,12 @@ class OwnerPortalController extends BaseController
 
     /**
      * GET /api/owner-portal/properties/{id}/payments
-     * Paiements d'un bien
      */
     public function propertyPayments(Request $request, array $params): void
     {
         $auth = OwnerPortalMiddleware::handle($request);
         $id   = $this->validateId($params['id']);
 
-        // VÃ©rifier que le bien appartient au propriÃ©taire
         $stmt = $this->db->prepare(
             'SELECT id FROM properties
              WHERE id = ? AND owner_id = ? AND agency_id = ? AND deleted_at IS NULL'
@@ -182,7 +197,7 @@ class OwnerPortalController extends BaseController
 
         $stmt = $this->db->prepare(
             'SELECT py.*,
-                    CONCAT(t.first_name, " ", t.last_name) AS tenant_name
+                    CONCAT(t.first_name, \' \', t.last_name) AS tenant_name
              FROM payments py
              LEFT JOIN contracts c ON c.id = py.contract_id
              LEFT JOIN tenants   t ON t.id = c.tenant_id
@@ -197,7 +212,6 @@ class OwnerPortalController extends BaseController
 
     /**
      * GET /api/owner-portal/properties/{id}/expenses
-     * DÃ©penses d'un bien
      */
     public function propertyExpenses(Request $request, array $params): void
     {
@@ -223,25 +237,22 @@ class OwnerPortalController extends BaseController
 
     /**
      * GET /api/owner-portal/summary
-     * Bilan financier global
      */
     public function summary(Request $request): void
     {
         $auth = OwnerPortalMiddleware::handle($request);
 
-        // Total revenus
         $stmt = $this->db->prepare(
             'SELECT COALESCE(SUM(py.amount_paid), 0) as total
              FROM payments py
              LEFT JOIN contracts c ON c.id = py.contract_id
              LEFT JOIN properties p ON p.id = c.property_id
              WHERE p.owner_id = ? AND py.agency_id = ?
-               AND py.status IN ("paid", "partial")'
+               AND py.status IN (\'paid\', \'partial\')'
         );
         $stmt->execute([$auth['id'], $auth['agency_id']]);
         $totalRevenue = (float) $stmt->fetchColumn();
 
-        // Total dÃ©penses
         $stmt = $this->db->prepare(
             'SELECT COALESCE(SUM(e.amount), 0) as total
              FROM property_expenses e
@@ -251,26 +262,24 @@ class OwnerPortalController extends BaseController
         $stmt->execute([$auth['id'], $auth['agency_id']]);
         $totalExpenses = (float) $stmt->fetchColumn();
 
-        // Nombre de biens
         $stmt = $this->db->prepare(
             'SELECT
                 COUNT(*) as total,
-                SUM(CASE WHEN status = "rented"      THEN 1 ELSE 0 END) as rented,
-                SUM(CASE WHEN status = "available"   THEN 1 ELSE 0 END) as available,
-                SUM(CASE WHEN status = "maintenance" THEN 1 ELSE 0 END) as maintenance
+                SUM(CASE WHEN status = \'rented\'      THEN 1 ELSE 0 END) as rented,
+                SUM(CASE WHEN status = \'available\'   THEN 1 ELSE 0 END) as available,
+                SUM(CASE WHEN status = \'maintenance\' THEN 1 ELSE 0 END) as maintenance
              FROM properties
              WHERE owner_id = ? AND agency_id = ? AND deleted_at IS NULL'
         );
         $stmt->execute([$auth['id'], $auth['agency_id']]);
         $properties = $stmt->fetch();
 
-        // Paiements en retard
         $stmt = $this->db->prepare(
             'SELECT COUNT(*) as total
              FROM payments py
              LEFT JOIN contracts c ON c.id = py.contract_id
              LEFT JOIN properties p ON p.id = c.property_id
-             WHERE p.owner_id = ? AND py.agency_id = ? AND py.status = "late"'
+             WHERE p.owner_id = ? AND py.agency_id = ? AND py.status = \'late\''
         );
         $stmt->execute([$auth['id'], $auth['agency_id']]);
         $latePayments = (int) $stmt->fetchColumn();

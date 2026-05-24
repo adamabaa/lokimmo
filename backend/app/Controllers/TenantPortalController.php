@@ -33,24 +33,45 @@ class TenantPortalController extends BaseController
         ]);
 
         if (!empty($errors)) {
-            Response::error('DonnÃ©es invalides', 422, $errors);
+            Response::error('Données invalides', 422, $errors);
         }
 
-        // Chercher le locataire par email portail
+        // Résoudre agency_id depuis le slug (route publique — pas de JWT)
+        $agencyId = $request->agencyId;
+
+        if (!$agencyId) {
+            $slug = $request->getHeader('x-agency-slug');
+            if (!$slug) {
+                Response::error('Agence non identifiée', 400);
+            }
+
+            $stmt = $this->db->prepare(
+                'SELECT id FROM agencies WHERE slug = ? AND is_active = 1 LIMIT 1'
+            );
+            $stmt->execute([$slug]);
+            $agency = $stmt->fetch();
+
+            if (!$agency) {
+                Response::error('Agence introuvable', 404);
+            }
+
+            $agencyId = (int) $agency['id'];
+        }
+
         $stmt = $this->db->prepare(
             'SELECT id, agency_id, first_name, last_name,
                     email, portal_email, portal_password,
                     portal_active
-             FROM tenants
-             WHERE (portal_email = ? OR email = ?)
-               AND agency_id = ?
-               AND deleted_at IS NULL
-             LIMIT 1'
+            FROM tenants
+            WHERE (portal_email = ? OR email = ?)
+            AND agency_id = ?
+            AND deleted_at IS NULL
+            LIMIT 1'
         );
         $stmt->execute([
             $data['email'],
             $data['email'],
-            $request->agencyId
+            $agencyId,
         ]);
         $tenant = $stmt->fetch();
 
@@ -59,14 +80,13 @@ class TenantPortalController extends BaseController
         }
 
         if (!(bool) $tenant['portal_active']) {
-            Response::forbidden('Votre accÃ¨s au portail n\'est pas activÃ©. Contactez votre agence.');
+            Response::forbidden('Votre accès au portail n\'est pas activé. Contactez votre agence.');
         }
 
         if (!password_verify($data['password'], $tenant['portal_password'])) {
             Response::unauthorized('Email ou mot de passe incorrect');
         }
 
-        // Mettre Ã  jour la derniÃ¨re connexion
         $this->db->prepare(
             'UPDATE tenants SET last_portal_login = NOW() WHERE id = ?'
         )->execute([$tenant['id']]);
@@ -84,12 +104,12 @@ class TenantPortalController extends BaseController
                 'last_name'  => $tenant['last_name'],
                 'email'      => $tenant['portal_email'] ?? $tenant['email'],
             ],
-        ], 'Connexion rÃ©ussie');
+        ], 'Connexion réussie');
     }
 
     /**
      * GET /api/portal/me
-     * Profil du locataire connectÃ©
+     * Profil du locataire connecté
      */
     public function me(Request $request): void
     {
@@ -138,7 +158,7 @@ class TenantPortalController extends BaseController
              LEFT JOIN agencies   a ON a.id = c.agency_id
              WHERE c.tenant_id  = ?
                AND c.agency_id  = ?
-               AND c.status     = "active"
+               AND c.status     = \'active\'
                AND c.deleted_at IS NULL
              ORDER BY c.start_date DESC
              LIMIT 1'
@@ -147,7 +167,7 @@ class TenantPortalController extends BaseController
         $contract = $stmt->fetch();
 
         if (!$contract) {
-            Response::notFound('Aucun contrat actif trouvÃ©');
+            Response::notFound('Aucun contrat actif trouvé');
         }
 
         Response::json($contract);
