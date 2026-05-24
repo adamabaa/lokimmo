@@ -13,24 +13,23 @@ class App
         // 1. Gestion erreurs globale
         self::registerErrorHandlers();
 
-        // 2. CORS â€” doit Ãªtre avant tout le reste
+        // 2. CORS — doit être avant tout le reste
         self::setCorsHeaders();
 
-        // 3. OPTIONS preflight â€” rÃ©pondre et sortir
+        // 3. OPTIONS preflight — répondre et sortir
         if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
             http_response_code(204);
             exit;
         }
 
-        // 4. Headers sÃ©curitÃ©
+        // 4. Headers sécurité
         self::setSecurityHeaders();
 
-        // 5. RequÃªte + middleware tenant
+        // 5. Requête + middleware tenant
         $request = new Request();
         TenantMiddleware::handle($request);
 
-        // 6. Router â€” on l'expose via une fonction statique
-        //    pour que api.php puisse y accÃ©der sans "global"
+        // 6. Router
         $router = new Router();
         self::loadRoutes($router);
         $router->resolve($request);
@@ -38,12 +37,11 @@ class App
 
     /**
      * Charge api.php en injectant $router dans son scope.
-     * Ã‰vite le problÃ¨me de variable inaccessible dans require
-     * appelÃ© depuis une mÃ©thode statique.
+     * Évite le problème de variable inaccessible dans require
+     * appelé depuis une méthode statique.
      */
     private static function loadRoutes(Router $router): void
     {
-        // $router est visible dans api.php grÃ¢ce au scope de cette mÃ©thode
         require BASE_PATH . '/routes/api.php';
     }
 
@@ -57,7 +55,6 @@ class App
         $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
         if (empty($origin) && env('APP_ENV') !== 'production') {
-            // Postman / curl en local sans header Origin
             header('Access-Control-Allow-Origin: *');
         } elseif (in_array($origin, $allowedOrigins, true)) {
             header("Access-Control-Allow-Origin: {$origin}");

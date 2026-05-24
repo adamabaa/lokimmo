@@ -10,7 +10,7 @@ class Router
     private string $currentPrefix      = '';
     private array  $currentMiddlewares = [];
 
-    // â”€â”€ Enregistrement des routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── Enregistrement des routes ────────────────────────────────────────────
 
     public function get(string $uri, string $action, array $middlewares = []): void
     {
@@ -37,7 +37,7 @@ class Router
         $this->add('DELETE', $uri, $action, $middlewares);
     }
 
-    // â”€â”€ Groupes de routes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── Groupes de routes ────────────────────────────────────────────────────
 
     public function group(string $prefix, array $middlewares, callable $callback): void
     {
@@ -53,7 +53,7 @@ class Router
         $this->currentMiddlewares = $previousMiddlewares;
     }
 
-    // â”€â”€ RÃ©solution de la requÃªte â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── Résolution de la requête ─────────────────────────────────────────────
 
     public function resolve(Request $request): void
     {
@@ -77,7 +77,7 @@ class Router
         Response::notFound('Route introuvable');
     }
 
-    // â”€â”€ MÃ©thodes privÃ©es â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ─── Méthodes privées ─────────────────────────────────────────────────────
 
     private function add(string $method, string $uri, string $action, array $middlewares): void
     {
@@ -121,7 +121,7 @@ class Router
             $middleware = new $fqcn();
 
             if (!method_exists($middleware, 'handle')) {
-                Response::error("Middleware {$name} : mÃ©thode handle() absente", 500);
+                Response::error("Middleware {$name} : méthode handle() absente", 500);
                 exit;
             }
 
@@ -142,7 +142,7 @@ class Router
         $controller = new $fqcn();
 
         if (!method_exists($controller, $method)) {
-            Response::error("MÃ©thode {$method} introuvable dans {$class}", 500);
+            Response::error("Méthode {$method} introuvable dans {$class}", 500);
             exit;
         }
 

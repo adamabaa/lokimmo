@@ -33,9 +33,9 @@ require_once BASE_PATH . '/app/Services/CinetPayService.php';
 require_once BASE_PATH . '/app/Services/BillingService.php';
 require_once BASE_PATH . '/app/Services/CashSyncService.php';
 
-// 5. Models
-require_once BASE_PATH . '/app/Models/SuperAdmin.php';
+// 5. Models — BaseModel EN PREMIER
 require_once BASE_PATH . '/app/Models/BaseModel.php';
+require_once BASE_PATH . '/app/Models/SuperAdmin.php';
 require_once BASE_PATH . '/app/Models/Agency.php';
 require_once BASE_PATH . '/app/Models/User.php';
 require_once BASE_PATH . '/app/Models/Owner.php';

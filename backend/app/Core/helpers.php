@@ -32,7 +32,7 @@ function loadEnv(string $path): void
 }
 
 /**
- * AccÃ¨de aux variables d'environnement
+ * Accède aux variables d'environnement
  */
 function env(string $key, mixed $default = null): mixed
 {

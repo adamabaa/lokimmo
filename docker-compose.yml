@@ -30,8 +30,6 @@ services:
     environment:
       MYSQL_DATABASE: lokimmo
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_USER: lokimmo
-      MYSQL_PASSWORD: lokimmo
     ports:
       - "3307:3306"
     volumes:

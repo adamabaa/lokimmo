@@ -11,7 +11,7 @@ class Response
         string $message = 'OK',
         int $status = 200
     ): void {
-        self::send(['success' => true,  'message' => $message, 'data'   => $data], $status);
+        self::send(['success' => true, 'message' => $message, 'data' => $data], $status);
     }
 
     public static function error(
@@ -22,12 +22,12 @@ class Response
         self::send(['success' => false, 'message' => $message, 'errors' => $errors], $status);
     }
 
-    public static function unauthorized(string $message = 'Non autorisÃ©'): void
+    public static function unauthorized(string $message = 'Non autorisé'): void
     {
         self::error($message, 401);
     }
 
-    public static function forbidden(string $message = 'AccÃ¨s interdit'): void
+    public static function forbidden(string $message = 'Accès interdit'): void
     {
         self::error($message, 403);
     }

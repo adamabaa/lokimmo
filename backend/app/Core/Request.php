@@ -51,7 +51,7 @@ class Request
         $uri = strtok($uri, '?');
 
         // Supprimer le sous-dossier XAMPP du chemin
-        // /lokimmo/backend/public/api/super/login â†’ /api/super/login
+        // /lokimmo/backend/public/api/super/login → /api/super/login
         $basePath = str_replace(
             '\\', '/',
             dirname($_SERVER['SCRIPT_NAME'])
@@ -63,6 +63,7 @@ class Request
 
         return rtrim($uri, '/') ?: '/';
     }
+
     private function parseBody(): array
     {
         if ($this->method === 'GET') {
@@ -70,14 +71,20 @@ class Request
         }
 
         $raw = file_get_contents('php://input');
+        $decoded = [];
+        
         if (!empty($raw)) {
             $decoded = json_decode($raw, true);
-            if (json_last_error() === JSON_ERROR_NONE) {
-                return array_merge($_POST, $decoded);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                $decoded = [];
             }
         }
 
-        return $_POST;
+        // Vérifier que $_POST est un tableau et fusionner
+        $postData = is_array($_POST) ? $_POST : [];
+        $decodedData = is_array($decoded) ? $decoded : [];
+        
+        return array_merge($postData, $decodedData);
     }
 
     private function parseHeaders(): array
@@ -93,8 +100,8 @@ class Request
     }
 
     /**
- * Retourne une valeur sanitisÃ©e (protÃ¨ge contre XSS)
-    */
+     * Retourne une valeur sanitisée (protège contre XSS)
+     */
     public function sanitized(string $key, mixed $default = null): mixed
     {
         $value = $this->body[$key] ?? $default;
@@ -102,17 +109,17 @@ class Request
         if (is_string($value)) {
             // Supprimer les espaces inutiles
             $value = trim($value);
-            // Convertir les caractÃ¨res spÃ©ciaux HTML
+            // Convertir les caractères spéciaux HTML
             $value = htmlspecialchars($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
         }
 
         return $value;
     }
 
-/**
- * Retourne toutes les donnÃ©es sanitisÃ©es
- */
-public function sanitizedAll(): array
+    /**
+     * Retourne toutes les données sanitisées
+     */
+    public function sanitizedAll(): array
     {
         return array_map(function ($value) {
             if (is_string($value)) {
