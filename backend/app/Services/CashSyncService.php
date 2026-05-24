@@ -7,33 +7,34 @@ namespace App\Services;
 use App\Core\Database;
 
 /**
- * Synchronisation automatique Paiements â†’ Caisse
- * AppelÃ© quand un paiement est marquÃ© payÃ©
+ * Synchronisation automatique Paiements → Caisse
+ * Appelé quand un paiement est marqué payé
  */
 class CashSyncService
 {
     /**
-     * CrÃ©er une opÃ©ration de caisse depuis un paiement
+     * Créer une opération de caisse depuis un paiement
      */
     public static function syncPayment(
-        int    $paymentId,
-        int    $agencyId,
-        int    $userId
+        int $paymentId,
+        int $agencyId,
+        int $userId
     ): bool {
         $db = Database::getInstance();
 
-        // VÃ©rifier si dÃ©jÃ  synchronisÃ©
+        // Vérifier si déjà synchronisé
         $stmt = $db->prepare(
             'SELECT id FROM cash_operations WHERE payment_id = ? LIMIT 1'
         );
         $stmt->execute([$paymentId]);
-        if ($stmt->fetch()) return false; // DÃ©jÃ  synchro
+        if ($stmt->fetch()) return false;
 
-        // RÃ©cupÃ©rer le paiement
+        // Récupérer le paiement avec ses relations
         $stmt = $db->prepare(
             'SELECT py.*, t.first_name, t.last_name,
                     p.title AS property_title,
-                    c.tenant_id
+                    c.tenant_id,
+                    c.property_id
              FROM payments py
              LEFT JOIN contracts  c ON c.id = py.contract_id
              LEFT JOIN tenants    t ON t.id = c.tenant_id
@@ -47,47 +48,49 @@ class CashSyncService
 
         // Trouver session ouverte du jour
         $stmt2 = $db->prepare(
-            'SELECT id FROM cash_sessions
+            "SELECT id FROM cash_sessions
              WHERE agency_id = ? AND user_id = ?
-               AND date = CURDATE() AND status = "open"
-             LIMIT 1'
+               AND date = CURDATE() AND status = 'open'
+             LIMIT 1"
         );
         $stmt2->execute([$agencyId, $userId]);
         $session = $stmt2->fetch();
 
-        // Pas de session ouverte â†’ crÃ©er automatiquement
+        // Pas de session ouverte → créer automatiquement
         if (!$session) {
             $db->prepare(
-                'INSERT INTO cash_sessions
+                "INSERT INTO cash_sessions
                     (agency_id, user_id, date, opening_balance, notes)
-                 VALUES (?, ?, CURDATE(), 0, "Session auto-crÃ©Ã©e")'
+                 VALUES (?, ?, CURDATE(), 0, 'Session auto-créée')"
             )->execute([$agencyId, $userId]);
             $sessionId = (int) $db->lastInsertId();
         } else {
             $sessionId = $session['id'];
         }
 
+        // Construire le libellé de l'opération
         $tenantName = trim(
             ($payment['first_name'] ?? '') . ' ' . ($payment['last_name'] ?? '')
         );
         $month      = $payment['period_month'] ?? '';
         $year       = $payment['period_year']  ?? '';
-        $months     = ['Jan','FÃ©v','Mar','Avr','Mai','Jun',
-                       'Jul','AoÃ»','Sep','Oct','Nov','DÃ©c'];
+        $months     = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun',
+                       'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
         $monthLabel = $month ? ($months[$month - 1] ?? $month) : '';
 
         $description = "Loyer {$monthLabel} {$year}"
-            . ($tenantName ? " â€” {$tenantName}" : '')
+            . ($tenantName ? " — {$tenantName}" : '')
             . ($payment['property_title'] ? " ({$payment['property_title']})" : '');
 
-        // CrÃ©er l'opÃ©ration de caisse
+        // Créer l'opération de caisse
+        // Guillemets simples pour les valeurs enum → évite l'erreur "Unknown column"
         $db->prepare(
-            'INSERT INTO cash_operations
+            "INSERT INTO cash_operations
                 (agency_id, session_id, user_id, type, category,
                  amount, description, payment_id, tenant_id,
                  property_id, payment_method, status)
-             VALUES (?, ?, ?, "income", "rent",
-                     ?, ?, ?, ?, ?, ?, "validated")'
+             VALUES (?, ?, ?, 'income', 'rent',
+                     ?, ?, ?, ?, ?, ?, 'validated')"
         )->execute([
             $agencyId,
             $sessionId,
@@ -95,8 +98,8 @@ class CashSyncService
             $payment['amount_paid'],
             $description,
             $paymentId,
-            $payment['tenant_id']    ?? null,
-            $payment['property_id']  ?? null,
+            $payment['tenant_id']      ?? null,
+            $payment['property_id']    ?? null,
             $payment['payment_method'] ?? 'cash',
         ]);
 
@@ -104,15 +107,15 @@ class CashSyncService
     }
 
     /**
-     * Annuler une opÃ©ration de caisse liÃ©e Ã  un paiement
-     * (quand un paiement payÃ© est remis en attente)
+     * Annuler une opération de caisse liée à un paiement
+     * (quand un paiement payé est remis en attente)
      */
     public static function unsyncPayment(int $paymentId): void
     {
         $db = Database::getInstance();
         $db->prepare(
-            'UPDATE cash_operations SET status = "rejected"
-             WHERE payment_id = ?'
+            "UPDATE cash_operations SET status = 'rejected'
+             WHERE payment_id = ?"
         )->execute([$paymentId]);
     }
 }
