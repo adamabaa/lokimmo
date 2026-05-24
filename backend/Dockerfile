@@ -15,7 +15,7 @@ COPY . .
 RUN composer install --no-dev --optimize-autoloader
 
 # Config nginx
-COPY nginx.conf /etc/nginx/sites-available/default
+COPY nginx.render.conf /etc/nginx/sites-available/default
 
 # Permissions
 RUN chmod -R 775 storage \
