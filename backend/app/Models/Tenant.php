@@ -34,30 +34,31 @@ class Tenant extends BaseModel
 
     public function update(int $id, int $agencyId, array $data): bool
     {
-        $stmt = $this->db->prepare(
-            'UPDATE tenants
-             SET first_name     = :first_name,
-                 last_name      = :last_name,
-                 email          = :email,
-                 phone          = :phone,
-                 id_card_number = :id_card_number,
-                 profession     = :profession,
-                 monthly_income = :monthly_income,
-                 notes          = :notes
-             WHERE id = :id AND agency_id = :agency_id'
-        );
-        $stmt->execute([
-            ':first_name'     => $data['first_name'],
-            ':last_name'      => $data['last_name'],
-            ':email'          => $data['email']          ?? null,
-            ':phone'          => $data['phone']          ?? null,
-            ':id_card_number' => $data['id_card_number'] ?? null,
-            ':profession'     => $data['profession']     ?? null,
-            ':monthly_income' => $data['monthly_income'] ?? null,
-            ':notes'          => $data['notes']          ?? null,
-            ':id'             => $id,
-            ':agency_id'      => $agencyId,
-        ]);
+        $allowed = [
+            'first_name', 'last_name', 'email', 'phone',
+            'id_card_number', 'profession', 'monthly_income', 'notes'
+        ];
+
+        $sets   = [];
+        $params = [':id' => $id, ':agency_id' => $agencyId];
+
+        foreach ($allowed as $field) {
+            if (array_key_exists($field, $data)) {
+                $sets[]              = "{$field} = :{$field}";
+                $params[":{$field}"] = $data[$field];
+            }
+        }
+
+        if (empty($sets)) {
+            return false;
+        }
+
+        $sql = 'UPDATE tenants SET ' . implode(', ', $sets)
+            . ' WHERE id = :id AND agency_id = :agency_id AND deleted_at IS NULL';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+
         return $stmt->rowCount() > 0;
     }
 }

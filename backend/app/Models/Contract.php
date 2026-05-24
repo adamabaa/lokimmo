@@ -37,29 +37,33 @@ class Contract extends BaseModel
 
     public function update(int $id, int $agencyId, array $data): bool
     {
-        $stmt = $this->db->prepare(
-            'UPDATE contracts
-             SET end_date       = :end_date,
-                 rent_amount    = :rent_amount,
-                 deposit_amount = :deposit_amount,
-                 payment_day    = :payment_day,
-                 status         = :status,
-                 notes          = :notes
-             WHERE id = :id AND agency_id = :agency_id'
-        );
-        $stmt->execute([
-            ':end_date'       => $data['end_date']       ?? null,
-            ':rent_amount'    => $data['rent_amount'],
-            ':deposit_amount' => $data['deposit_amount'] ?? null,
-            ':payment_day'    => $data['payment_day']    ?? 5,
-            ':status'         => $data['status']         ?? 'active',
-            ':notes'          => $data['notes']          ?? null,
-            ':id'             => $id,
-            ':agency_id'      => $agencyId,
-        ]);
+        $allowed = [
+            'end_date', 'rent_amount', 'deposit_amount',
+            'payment_day', 'status', 'notes'
+        ];
+
+        $sets   = [];
+        $params = [':id' => $id, ':agency_id' => $agencyId];
+
+        foreach ($allowed as $field) {
+            if (array_key_exists($field, $data)) {
+                $sets[]              = "{$field} = :{$field}";
+                $params[":{$field}"] = $data[$field];
+            }
+        }
+
+        if (empty($sets)) {
+            return false;
+        }
+
+        $sql = 'UPDATE contracts SET ' . implode(', ', $sets)
+            . ' WHERE id = :id AND agency_id = :agency_id AND deleted_at IS NULL';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+
         return $stmt->rowCount() > 0;
     }
-
     public function findAllWithDetails(int $agencyId): array
     {
         $stmt = $this->db->prepare(

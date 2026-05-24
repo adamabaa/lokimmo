@@ -90,17 +90,28 @@ class Agency
 
     public function update(int $id, array $data): bool
     {
-        $stmt = $this->db->prepare(
-            'UPDATE agencies
-             SET name = :name, email = :email, plan = :plan
-             WHERE id = :id'
-        );
-        $stmt->execute([
-            ':name'  => $data['name'],
-            ':email' => $data['email'],
-            ':plan'  => $data['plan'] ?? 'free',
-            ':id'    => $id,
-        ]);
+        $allowed = ['name', 'email', 'plan'];
+
+        $sets   = [];
+        $params = [':id' => $id];
+
+        foreach ($allowed as $field) {
+            if (array_key_exists($field, $data)) {
+                $sets[]              = "{$field} = :{$field}";
+                $params[":{$field}"] = $data[$field];
+            }
+        }
+
+        if (empty($sets)) {
+            return false;
+        }
+
+        $sql = 'UPDATE agencies SET ' . implode(', ', $sets)
+            . ' WHERE id = :id';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+
         return $stmt->rowCount() > 0;
     }
 
@@ -141,27 +152,31 @@ class Agency
 
     public function updateProfile(int $id, array $data): bool
     {
-        $stmt = $this->db->prepare(
-            'UPDATE agencies
-             SET name            = :name,
-                 email           = :email,
-                 phone           = :phone,
-                 address         = :address,
-                 website         = :website,
-                 primary_color   = :primary_color,
-                 secondary_color = :secondary_color
-             WHERE id = :id'
-        );
-        $stmt->execute([
-            ':name'            => $data['name'],
-            ':email'           => $data['email'],
-            ':phone'           => $data['phone']           ?? null,
-            ':address'         => $data['address']         ?? null,
-            ':website'         => $data['website']         ?? null,
-            ':primary_color'   => $data['primary_color']   ?? '#d4a853',
-            ':secondary_color' => $data['secondary_color'] ?? '#0f1117',
-            ':id'              => $id,
-        ]);
+        $allowed = [
+            'name', 'email', 'phone', 'address',
+            'website', 'primary_color', 'secondary_color'
+        ];
+
+        $sets   = [];
+        $params = [':id' => $id];
+
+        foreach ($allowed as $field) {
+            if (array_key_exists($field, $data)) {
+                $sets[]              = "{$field} = :{$field}";
+                $params[":{$field}"] = $data[$field];
+            }
+        }
+
+        if (empty($sets)) {
+            return false;
+        }
+
+        $sql = 'UPDATE agencies SET ' . implode(', ', $sets)
+            . ' WHERE id = :id';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+
         return $stmt->rowCount() >= 0;
     }
 

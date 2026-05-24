@@ -38,34 +38,31 @@ class Property extends BaseModel
 
     public function update(int $id, int $agencyId, array $data): bool
     {
-        $stmt = $this->db->prepare(
-            'UPDATE properties
-             SET owner_id       = :owner_id,
-                 title          = :title,
-                 type           = :type,
-                 address        = :address,
-                 city           = :city,
-                 area_sqm       = :area_sqm,
-                 rent_amount    = :rent_amount,
-                 deposit_amount = :deposit_amount,
-                 status         = :status,
-                 description    = :description
-             WHERE id = :id AND agency_id = :agency_id'
-        );
-        $stmt->execute([
-            ':owner_id'       => $data['owner_id'],
-            ':title'          => $data['title'],
-            ':type'           => $data['type']           ?? 'apartment',
-            ':address'        => $data['address'],
-            ':city'           => $data['city'],
-            ':area_sqm'       => $data['area_sqm']       ?? null,
-            ':rent_amount'    => $data['rent_amount'],
-            ':deposit_amount' => $data['deposit_amount'] ?? null,
-            ':status'         => $data['status']         ?? 'available',
-            ':description'    => $data['description']    ?? null,
-            ':id'             => $id,
-            ':agency_id'      => $agencyId,
-        ]);
+        $allowed = [
+            'owner_id', 'title', 'type', 'address', 'city',
+            'area_sqm', 'rent_amount', 'deposit_amount', 'status', 'description'
+        ];
+
+        $sets   = [];
+        $params = [':id' => $id, ':agency_id' => $agencyId];
+
+        foreach ($allowed as $field) {
+            if (array_key_exists($field, $data)) {
+                $sets[]              = "{$field} = :{$field}";
+                $params[":{$field}"] = $data[$field];
+            }
+        }
+
+        if (empty($sets)) {
+            return false;
+        }
+
+        $sql = 'UPDATE properties SET ' . implode(', ', $sets)
+            . ' WHERE id = :id AND agency_id = :agency_id AND deleted_at IS NULL';
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+
         return $stmt->rowCount() > 0;
     }
 
