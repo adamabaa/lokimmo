@@ -136,7 +136,7 @@ class LogController extends BaseController
         ]);
     }
 
-    public function byAgency(Request $request, array $params): void
+   public function byAgency(Request $request, array $params): void
     {
         SuperAdminMiddleware::handle($request);
         $id     = $this->validateId($params['id']);
@@ -152,14 +152,26 @@ class LogController extends BaseController
 
         $stmt = $this->db->prepare(
             "SELECT l.*,
-                    CONCAT(u.first_name, ' ', u.last_name) AS user_name,
-                    u.email AS user_email,
-                    u.role  AS user_role
-             FROM activity_logs l
-             LEFT JOIN users u ON u.id = l.user_id
-             WHERE l.agency_id = ?
-             ORDER BY l.created_at DESC
-             LIMIT {$limit} OFFSET {$offset}"
+                    CASE
+                        WHEN l.user_type = 'super_admin' THEN
+                            CONCAT(sa.first_name, ' ', sa.last_name)
+                        ELSE
+                            CONCAT(u.first_name, ' ', u.last_name)
+                    END AS user_name,
+                    CASE
+                        WHEN l.user_type = 'super_admin' THEN sa.email
+                        ELSE u.email
+                    END AS user_email,
+                    CASE
+                        WHEN l.user_type = 'super_admin' THEN 'super_admin'
+                        ELSE u.role
+                    END AS user_role
+            FROM activity_logs l
+            LEFT JOIN users        u  ON u.id  = l.user_id AND l.user_type = 'agency_user'
+            LEFT JOIN super_admins sa ON sa.id = l.user_id AND l.user_type = 'super_admin'
+            WHERE l.agency_id = ?
+            ORDER BY l.created_at DESC
+            LIMIT {$limit} OFFSET {$offset}"
         );
         $stmt->execute([$id]);
 
