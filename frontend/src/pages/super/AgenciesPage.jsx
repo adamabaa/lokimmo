@@ -8,8 +8,7 @@ import Alert             from '../../components/ui/Alert'
 import Spinner           from '../../components/ui/Spinner'
 import {
   Plus, Pencil, Trash2, KeyRound,
-  CreditCard, UserCheck, UserX,
-  Building2,
+  CreditCard, UserCheck, UserX, Building2,
 } from 'lucide-react'
 
 const PLAN_STYLES = {
@@ -23,10 +22,103 @@ const EMPTY_FORM = {
   last_name: '', email: '', password: '', plan: 'free',
 }
 
+// ── Card mobile pour une agence ───────────────────────────────
+function AgencyCard({ agency, onEdit, onPlan, onReset, onToggle, onDelete }) {
+  const plan = PLAN_STYLES[agency.plan] || PLAN_STYLES.free
+
+  return (
+    <div style={{
+      background:   '#0e1219',
+      border:       '1px solid rgba(255,255,255,0.06)',
+      borderRadius: '12px',
+      padding:      '1rem',
+      marginBottom: '0.75rem',
+    }}>
+      {/* Header card */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ fontWeight: 600, color: '#f0ece4', fontSize: '0.95rem', marginBottom: '2px' }}>
+            {agency.name}
+          </div>
+          <div style={{ fontSize: '0.78rem', color: '#555761' }}>{agency.email}</div>
+          <code style={{
+            fontSize: '0.72rem', color: '#8b8d96',
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.06)',
+            borderRadius: '4px', padding: '1px 6px',
+            display: 'inline-block', marginTop: '4px',
+          }}>
+            {agency.slug}
+          </code>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end', flexShrink: 0, marginLeft: '8px' }}>
+          <span style={{
+            background: plan.bg, color: plan.color,
+            borderRadius: '20px', padding: '2px 8px',
+            fontSize: '0.72rem', fontWeight: 500,
+          }}>
+            {plan.label}
+          </span>
+          <span style={{
+            background:   agency.is_active ? 'rgba(62,207,142,0.1)' : 'rgba(229,83,75,0.1)',
+            color:        agency.is_active ? '#3ecf8e' : '#e5534b',
+            borderRadius: '20px', padding: '2px 8px',
+            fontSize:     '0.72rem', fontWeight: 500,
+            display:      'inline-flex', alignItems: 'center', gap: '3px',
+          }}>
+            {agency.is_active
+              ? <><UserCheck size={9} /> Active</>
+              : <><UserX    size={9} /> Inactive</>
+            }
+          </span>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: '0.5rem', marginBottom: '0.75rem',
+      }}>
+        {[
+          { label: 'Users',     value: agency.users_count      || 0 },
+          { label: 'Biens',     value: agency.properties_count || 0 },
+          { label: 'Contrats',  value: agency.contracts_count  || 0 },
+        ].map(stat => (
+          <div key={stat.label} style={{
+            background:   'rgba(255,255,255,0.03)',
+            border:       '1px solid rgba(255,255,255,0.06)',
+            borderRadius: '8px', padding: '0.5rem',
+            textAlign:    'center',
+          }}>
+            <div style={{ fontSize: '1rem', fontWeight: 600, color: '#f0ece4' }}>{stat.value}</div>
+            <div style={{ fontSize: '0.65rem', color: '#555761', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{stat.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ fontSize: '0.72rem', color: '#555761', marginBottom: '0.75rem' }}>
+        Créée le {formatDate(agency.created_at)}
+      </div>
+
+      {/* Actions */}
+      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+        <button onClick={() => onEdit(agency)}   style={btnStyle('#5b9cf6')}><Pencil size={11} /> Modifier</button>
+        <button onClick={() => onPlan(agency)}   style={btnStyle('#d4a853')}><CreditCard size={11} /> Plan</button>
+        <button onClick={() => onReset(agency)}  style={btnStyle('#8b8d96')}><KeyRound size={11} /> MDP</button>
+        <button onClick={() => onToggle(agency)} style={btnStyle(agency.is_active ? '#e5534b' : '#3ecf8e')}>
+          {agency.is_active ? <><UserX size={11} /> Désactiver</> : <><UserCheck size={11} /> Activer</>}
+        </button>
+        <button onClick={() => onDelete(agency)} style={btnStyle('#e5534b')}><Trash2 size={11} /> Supprimer</button>
+      </div>
+    </div>
+  )
+}
+
 export default function AgenciesPage() {
   const { show }      = useToast()
   const [agencies,    setAgencies]    = useState([])
   const [loading,     setLoading]     = useState(true)
+  const [isMobile,    setIsMobile]    = useState(window.innerWidth <= 768)
   const [createModal, setCreateModal] = useState(false)
   const [editModal,   setEditModal]   = useState(false)
   const [planModal,   setPlanModal]   = useState(false)
@@ -38,6 +130,12 @@ export default function AgenciesPage() {
   const [resetForm,   setResetForm]   = useState({ password: '' })
   const [error,       setError]       = useState('')
   const [saving,      setSaving]      = useState(false)
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -51,9 +149,7 @@ export default function AgenciesPage() {
   useEffect(() => { load() }, [load])
 
   const handleNameChange = (val) => {
-    const slug = val.toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-z0-9-]/g, '')
+    const slug = val.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
     setForm({ ...form, agency_name: val, agency_slug: slug })
   }
 
@@ -65,9 +161,7 @@ export default function AgenciesPage() {
       setCreateModal(false); setForm(EMPTY_FORM); load()
     } catch (err) {
       const errors = err.response?.data?.errors
-      setError(errors
-        ? Object.values(errors).flat()[0]
-        : err.response?.data?.message || 'Erreur')
+      setError(errors ? Object.values(errors).flat()[0] : err.response?.data?.message || 'Erreur')
     } finally { setSaving(false) }
   }
 
@@ -120,6 +214,20 @@ export default function AgenciesPage() {
     } finally { setSaving(false) }
   }
 
+  const handleEdit = (agency) => {
+    setSelected(agency)
+    setEditForm({ name: agency.name, email: agency.email, plan: agency.plan || 'free' })
+    setError(''); setEditModal(true)
+  }
+  const handlePlan = (agency) => {
+    setSelected(agency); setPlanForm({ plan: agency.plan || 'free' })
+    setError(''); setPlanModal(true)
+  }
+  const handleReset = (agency) => {
+    setSelected(agency); setResetForm({ password: '' })
+    setError(''); setResetModal(true)
+  }
+
   return (
     <SuperAdminLayout title="Agences" subtitle="Gérez toutes les agences de la plateforme">
 
@@ -127,28 +235,27 @@ export default function AgenciesPage() {
       <div style={{
         display: 'flex', justifyContent: 'space-between',
         alignItems: 'center', marginBottom: '1.5rem',
+        gap: '12px',
       }}>
         <div style={{ color: '#8b8d96', fontSize: '0.875rem' }}>
-          {agencies.length} agence{agencies.length > 1 ? 's' : ''} enregistrée{agencies.length > 1 ? 's' : ''}
+          {agencies.length} agence{agencies.length > 1 ? 's' : ''}
         </div>
         <button
           onClick={() => { setForm(EMPTY_FORM); setError(''); setCreateModal(true) }}
           style={{
             display: 'flex', alignItems: 'center', gap: '6px',
-            padding: '0.55rem 1.25rem',
+            padding: '0.55rem 1.1rem',
             background: '#5b9cf6', color: '#fff',
             border: 'none', borderRadius: '10px',
             fontSize: '0.875rem', fontWeight: 500,
-            cursor: 'pointer', transition: 'all 0.2s',
+            cursor: 'pointer', whiteSpace: 'nowrap',
           }}
-          onMouseEnter={e => e.currentTarget.style.background = '#7ab3f8'}
-          onMouseLeave={e => e.currentTarget.style.background = '#5b9cf6'}
         >
           <Plus size={15} /> Nouvelle agence
         </button>
       </div>
 
-      {/* Table */}
+      {/* Contenu */}
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
           <Spinner size="lg" />
@@ -158,208 +265,165 @@ export default function AgenciesPage() {
           <Building2 size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />
           <p>Aucune agence enregistrée</p>
         </div>
+      ) : isMobile ? (
+        // ── Vue mobile — cards ──
+        <div>
+          {agencies.map(agency => (
+            <AgencyCard
+              key={agency.id}
+              agency={agency}
+              onEdit={handleEdit}
+              onPlan={handlePlan}
+              onReset={handleReset}
+              onToggle={toggleAgency}
+              onDelete={deleteAgency}
+            />
+          ))}
+        </div>
       ) : (
+        // ── Vue desktop — table ──
         <div style={{
           background: '#0e1219',
           border: '1px solid rgba(255,255,255,0.06)',
           borderRadius: '12px', overflow: 'hidden',
         }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-            <thead>
-              <tr style={{ background: '#13171f', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                {['Agence', 'Slug', 'Plan', 'Users', 'Biens', 'Contrats', 'Statut', 'Créée le', 'Actions'].map(h => (
-                  <th key={h} style={{
-                    padding: '0.85rem 1rem', textAlign: 'left',
-                    fontSize: '0.7rem', color: '#555761',
-                    textTransform: 'uppercase', letterSpacing: '0.06em',
-                    whiteSpace: 'nowrap',
-                  }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {agencies.map((agency, i) => (
-                <tr key={agency.id}
-                  style={{
-                    borderBottom: '1px solid rgba(255,255,255,0.04)',
-                    transition: 'background 0.15s',
-                    opacity: 0,
-                    animation: `fadeIn 0.3s ease forwards ${i * 0.04}s`,
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >
-                  <td style={{ padding: '0.9rem 1rem' }}>
-                    <div style={{ fontWeight: 500, color: '#f0ece4' }}>{agency.name}</div>
-                    <div style={{ fontSize: '0.78rem', color: '#555761' }}>{agency.email}</div>
-                  </td>
-                  <td style={{ padding: '0.9rem 1rem' }}>
-                    <span style={{
-                      background: 'rgba(255,255,255,0.04)',
-                      border: '1px solid rgba(255,255,255,0.06)',
-                      borderRadius: '6px', padding: '2px 8px',
-                      fontSize: '0.78rem', color: '#8b8d96',
-                      fontFamily: 'monospace',
-                    }}>
-                      {agency.slug}
-                    </span>
-                  </td>
-                  <td style={{ padding: '0.9rem 1rem' }}>
-                    <span style={{
-                      background:   PLAN_STYLES[agency.plan]?.bg,
-                      color:        PLAN_STYLES[agency.plan]?.color,
-                      borderRadius: '20px', padding: '3px 10px',
-                      fontSize: '0.75rem', fontWeight: 500,
-                    }}>
-                      {PLAN_STYLES[agency.plan]?.label || agency.plan}
-                    </span>
-                  </td>
-                  <td style={{ padding: '0.9rem 1rem', color: '#8b8d96' }}>{agency.users_count || 0}</td>
-                  <td style={{ padding: '0.9rem 1rem', color: '#8b8d96' }}>{agency.properties_count || 0}</td>
-                  <td style={{ padding: '0.9rem 1rem', color: '#8b8d96' }}>{agency.contracts_count || 0}</td>
-                  <td style={{ padding: '0.9rem 1rem' }}>
-                    <span style={{
-                      background:   agency.is_active ? 'rgba(62,207,142,0.1)' : 'rgba(229,83,75,0.1)',
-                      color:        agency.is_active ? '#3ecf8e' : '#e5534b',
-                      borderRadius: '20px', padding: '3px 10px',
-                      fontSize: '0.75rem', fontWeight: 500,
-                      display: 'inline-flex', alignItems: 'center', gap: '4px',
-                    }}>
-                      {agency.is_active
-                        ? <><UserCheck size={10} /> Active</>
-                        : <><UserX    size={10} /> Inactive</>
-                      }
-                    </span>
-                  </td>
-                  <td style={{ padding: '0.9rem 1rem', color: '#555761', fontSize: '0.8rem' }}>
-                    {formatDate(agency.created_at)}
-                  </td>
-                  <td style={{ padding: '0.9rem 1rem' }}>
-                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                      <button
-                        onClick={() => {
-                          setSelected(agency)
-                          setEditForm({ name: agency.name, email: agency.email, plan: agency.plan || 'free' })
-                          setError(''); setEditModal(true)
-                        }}
-                        style={btnStyle('#5b9cf6')}
-                      >
-                        <Pencil size={11} /> Modifier
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelected(agency)
-                          setPlanForm({ plan: agency.plan || 'free' })
-                          setError(''); setPlanModal(true)
-                        }}
-                        style={btnStyle('#d4a853')}
-                      >
-                        <CreditCard size={11} /> Plan
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelected(agency)
-                          setResetForm({ password: '' })
-                          setError(''); setResetModal(true)
-                        }}
-                        style={btnStyle('#8b8d96')}
-                      >
-                        <KeyRound size={11} /> Reset MDP
-                      </button>
-                      <button
-                        onClick={() => toggleAgency(agency)}
-                        style={btnStyle(agency.is_active ? '#e5534b' : '#3ecf8e')}
-                      >
-                        {agency.is_active
-                          ? <><UserX    size={11} /> Désactiver</>
-                          : <><UserCheck size={11} /> Activer</>
-                        }
-                      </button>
-                      <button
-                        onClick={() => deleteAgency(agency)}
-                        style={btnStyle('#e5534b')}
-                      >
-                        <Trash2 size={11} /> Supprimer
-                      </button>
-                    </div>
-                  </td>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', minWidth: '800px' }}>
+              <thead>
+                <tr style={{ background: '#13171f', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                  {['Agence', 'Slug', 'Plan', 'Users', 'Biens', 'Contrats', 'Statut', 'Créée le', 'Actions'].map(h => (
+                    <th key={h} style={{
+                      padding: '0.85rem 1rem', textAlign: 'left',
+                      fontSize: '0.7rem', color: '#555761',
+                      textTransform: 'uppercase', letterSpacing: '0.06em',
+                      whiteSpace: 'nowrap',
+                    }}>{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {agencies.map((agency, i) => (
+                  <tr key={agency.id}
+                    style={{
+                      borderBottom: '1px solid rgba(255,255,255,0.04)',
+                      transition: 'background 0.15s',
+                      opacity: 0,
+                      animation: `fadeIn 0.3s ease forwards ${i * 0.04}s`,
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <td style={{ padding: '0.9rem 1rem' }}>
+                      <div style={{ fontWeight: 500, color: '#f0ece4' }}>{agency.name}</div>
+                      <div style={{ fontSize: '0.78rem', color: '#555761' }}>{agency.email}</div>
+                    </td>
+                    <td style={{ padding: '0.9rem 1rem' }}>
+                      <span style={{
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid rgba(255,255,255,0.06)',
+                        borderRadius: '6px', padding: '2px 8px',
+                        fontSize: '0.78rem', color: '#8b8d96', fontFamily: 'monospace',
+                      }}>
+                        {agency.slug}
+                      </span>
+                    </td>
+                    <td style={{ padding: '0.9rem 1rem' }}>
+                      <span style={{
+                        background: PLAN_STYLES[agency.plan]?.bg,
+                        color:      PLAN_STYLES[agency.plan]?.color,
+                        borderRadius: '20px', padding: '3px 10px',
+                        fontSize: '0.75rem', fontWeight: 500,
+                      }}>
+                        {PLAN_STYLES[agency.plan]?.label || agency.plan}
+                      </span>
+                    </td>
+                    <td style={{ padding: '0.9rem 1rem', color: '#8b8d96' }}>{agency.users_count || 0}</td>
+                    <td style={{ padding: '0.9rem 1rem', color: '#8b8d96' }}>{agency.properties_count || 0}</td>
+                    <td style={{ padding: '0.9rem 1rem', color: '#8b8d96' }}>{agency.contracts_count || 0}</td>
+                    <td style={{ padding: '0.9rem 1rem' }}>
+                      <span style={{
+                        background:   agency.is_active ? 'rgba(62,207,142,0.1)' : 'rgba(229,83,75,0.1)',
+                        color:        agency.is_active ? '#3ecf8e' : '#e5534b',
+                        borderRadius: '20px', padding: '3px 10px',
+                        fontSize: '0.75rem', fontWeight: 500,
+                        display: 'inline-flex', alignItems: 'center', gap: '4px',
+                      }}>
+                        {agency.is_active ? <><UserCheck size={10} /> Active</> : <><UserX size={10} /> Inactive</>}
+                      </span>
+                    </td>
+                    <td style={{ padding: '0.9rem 1rem', color: '#555761', fontSize: '0.8rem' }}>
+                      {formatDate(agency.created_at)}
+                    </td>
+                    <td style={{ padding: '0.9rem 1rem' }}>
+                      <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                        <button onClick={() => handleEdit(agency)}   style={btnStyle('#5b9cf6')}><Pencil size={11} /> Modifier</button>
+                        <button onClick={() => handlePlan(agency)}   style={btnStyle('#d4a853')}><CreditCard size={11} /> Plan</button>
+                        <button onClick={() => handleReset(agency)}  style={btnStyle('#8b8d96')}><KeyRound size={11} /> Reset MDP</button>
+                        <button onClick={() => toggleAgency(agency)} style={btnStyle(agency.is_active ? '#e5534b' : '#3ecf8e')}>
+                          {agency.is_active ? <><UserX size={11} /> Désactiver</> : <><UserCheck size={11} /> Activer</>}
+                        </button>
+                        <button onClick={() => deleteAgency(agency)} style={btnStyle('#e5534b')}><Trash2 size={11} /> Supprimer</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {/* Modal Créer */}
-      <Modal
-        isOpen={createModal}
-        onClose={() => setCreateModal(false)}
-        title="Nouvelle agence"
+      <Modal isOpen={createModal} onClose={() => setCreateModal(false)} title="Nouvelle agence"
         footer={
           <>
             <button className="lk-btn lk-btn-secondary" onClick={() => setCreateModal(false)}>Annuler</button>
-            <button
-              onClick={createAgency}
-              disabled={saving}
-              style={{ ...btnStyle('#5b9cf6'), padding: '0.5rem 1.25rem' }}
-            >
+            <button onClick={createAgency} disabled={saving} style={{ ...btnStyle('#5b9cf6'), padding: '0.5rem 1.25rem' }}>
               {saving ? <Spinner size="sm" /> : <><Plus size={13} /> Créer</>}
             </button>
           </>
         }
       >
         <Alert type="error" message={error} onClose={() => setError('')} />
-
         <div className="lk-input-group">
           <label className="lk-label">Nom de l'agence</label>
           <input className="lk-input" type="text" placeholder="Immo Dakar"
-            value={form.agency_name}
-            onChange={e => handleNameChange(e.target.value)} required />
+            value={form.agency_name} onChange={e => handleNameChange(e.target.value)} />
         </div>
-
         <div className="lk-input-group">
           <label className="lk-label">Slug</label>
           <input className="lk-input" type="text" placeholder="immo-dakar"
-            value={form.agency_slug}
-            onChange={e => setForm({ ...form, agency_slug: e.target.value })} required />
+            value={form.agency_slug} onChange={e => setForm({ ...form, agency_slug: e.target.value })} />
           <div style={{ fontSize: '0.75rem', color: '#555761', marginTop: '4px' }}>
             → {form.agency_slug || 'votre-agence'}.lokimmo.com
           </div>
         </div>
-
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div className="lk-input-group" style={{ marginBottom: 0 }}>
             <label className="lk-label">Prénom admin</label>
             <input className="lk-input" type="text" placeholder="Moussa"
-              value={form.first_name}
-              onChange={e => setForm({ ...form, first_name: e.target.value })} required />
+              value={form.first_name} onChange={e => setForm({ ...form, first_name: e.target.value })} />
           </div>
           <div className="lk-input-group" style={{ marginBottom: 0 }}>
             <label className="lk-label">Nom admin</label>
             <input className="lk-input" type="text" placeholder="Diallo"
-              value={form.last_name}
-              onChange={e => setForm({ ...form, last_name: e.target.value })} required />
+              value={form.last_name} onChange={e => setForm({ ...form, last_name: e.target.value })} />
           </div>
         </div>
-
         <div className="lk-input-group" style={{ marginTop: '1rem' }}>
           <label className="lk-label">Email admin</label>
           <input className="lk-input" type="email" placeholder="admin@immo-dakar.com"
-            value={form.email}
-            onChange={e => setForm({ ...form, email: e.target.value })} required />
+            value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
         </div>
-
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div className="lk-input-group" style={{ marginBottom: 0 }}>
             <label className="lk-label">Mot de passe</label>
             <input className="lk-input" type="password" placeholder="••••••••"
-              value={form.password}
-              onChange={e => setForm({ ...form, password: e.target.value })} required />
+              value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
           </div>
           <div className="lk-input-group" style={{ marginBottom: 0 }}>
             <label className="lk-label">Plan</label>
-            <select className="lk-input" value={form.plan}
-              onChange={e => setForm({ ...form, plan: e.target.value })}>
+            <select className="lk-input" value={form.plan} onChange={e => setForm({ ...form, plan: e.target.value })}>
               <option value="free">Free</option>
               <option value="starter">Starter</option>
               <option value="pro">Pro</option>
@@ -369,18 +433,11 @@ export default function AgenciesPage() {
       </Modal>
 
       {/* Modal Modifier */}
-      <Modal
-        isOpen={editModal}
-        onClose={() => setEditModal(false)}
-        title={`Modifier — ${selected?.name}`}
+      <Modal isOpen={editModal} onClose={() => setEditModal(false)} title={`Modifier — ${selected?.name}`}
         footer={
           <>
             <button className="lk-btn lk-btn-secondary" onClick={() => setEditModal(false)}>Annuler</button>
-            <button
-              onClick={updateAgency}
-              disabled={saving}
-              style={{ ...btnStyle('#5b9cf6'), padding: '0.5rem 1.25rem' }}
-            >
+            <button onClick={updateAgency} disabled={saving} style={{ ...btnStyle('#5b9cf6'), padding: '0.5rem 1.25rem' }}>
               {saving ? <Spinner size="sm" /> : <><Pencil size={13} /> Mettre à jour</>}
             </button>
           </>
@@ -389,31 +446,22 @@ export default function AgenciesPage() {
         <Alert type="error" message={error} onClose={() => setError('')} />
         <div className="lk-input-group">
           <label className="lk-label">Nom</label>
-          <input className="lk-input" type="text"
-            value={editForm.name}
-            onChange={e => setEditForm({ ...editForm, name: e.target.value })} required />
+          <input className="lk-input" type="text" value={editForm.name}
+            onChange={e => setEditForm({ ...editForm, name: e.target.value })} />
         </div>
         <div className="lk-input-group">
           <label className="lk-label">Email</label>
-          <input className="lk-input" type="email"
-            value={editForm.email}
-            onChange={e => setEditForm({ ...editForm, email: e.target.value })} required />
+          <input className="lk-input" type="email" value={editForm.email}
+            onChange={e => setEditForm({ ...editForm, email: e.target.value })} />
         </div>
       </Modal>
 
       {/* Modal Plan */}
-      <Modal
-        isOpen={planModal}
-        onClose={() => setPlanModal(false)}
-        title={`Changer le plan — ${selected?.name}`}
+      <Modal isOpen={planModal} onClose={() => setPlanModal(false)} title={`Changer le plan — ${selected?.name}`}
         footer={
           <>
             <button className="lk-btn lk-btn-secondary" onClick={() => setPlanModal(false)}>Annuler</button>
-            <button
-              onClick={changePlan}
-              disabled={saving}
-              style={{ ...btnStyle('#d4a853'), padding: '0.5rem 1.25rem' }}
-            >
+            <button onClick={changePlan} disabled={saving} style={{ ...btnStyle('#d4a853'), padding: '0.5rem 1.25rem' }}>
               {saving ? <Spinner size="sm" /> : <><CreditCard size={13} /> Changer</>}
             </button>
           </>
@@ -422,8 +470,7 @@ export default function AgenciesPage() {
         <Alert type="error" message={error} onClose={() => setError('')} />
         <div className="lk-input-group">
           <label className="lk-label">Plan</label>
-          <select className="lk-input" value={planForm.plan}
-            onChange={e => setPlanForm({ plan: e.target.value })}>
+          <select className="lk-input" value={planForm.plan} onChange={e => setPlanForm({ plan: e.target.value })}>
             <option value="free">Free</option>
             <option value="starter">Starter</option>
             <option value="pro">Pro</option>
@@ -431,8 +478,7 @@ export default function AgenciesPage() {
         </div>
         <div style={{
           marginTop: '1rem', padding: '0.75rem 1rem',
-          background: 'rgba(212,168,83,0.08)',
-          border: '1px solid rgba(212,168,83,0.2)',
+          background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.2)',
           borderRadius: '8px', fontSize: '0.8rem', color: '#8b8d96',
         }}>
           Plan actuel : <strong style={{ color: PLAN_STYLES[selected?.plan]?.color }}>
@@ -442,18 +488,11 @@ export default function AgenciesPage() {
       </Modal>
 
       {/* Modal Reset MDP */}
-      <Modal
-        isOpen={resetModal}
-        onClose={() => setResetModal(false)}
-        title={`Réinitialiser MDP — ${selected?.name}`}
+      <Modal isOpen={resetModal} onClose={() => setResetModal(false)} title={`Réinitialiser MDP — ${selected?.name}`}
         footer={
           <>
             <button className="lk-btn lk-btn-secondary" onClick={() => setResetModal(false)}>Annuler</button>
-            <button
-              onClick={resetPassword}
-              disabled={saving}
-              style={{ ...btnStyle('#e5534b'), padding: '0.5rem 1.25rem' }}
-            >
+            <button onClick={resetPassword} disabled={saving} style={{ ...btnStyle('#e5534b'), padding: '0.5rem 1.25rem' }}>
               {saving ? <Spinner size="sm" /> : <><KeyRound size={13} /> Réinitialiser</>}
             </button>
           </>
@@ -463,8 +502,7 @@ export default function AgenciesPage() {
         <div className="lk-input-group">
           <label className="lk-label">Nouveau mot de passe</label>
           <input className="lk-input" type="password" placeholder="••••••••"
-            value={resetForm.password}
-            onChange={e => setResetForm({ password: e.target.value })} required />
+            value={resetForm.password} onChange={e => setResetForm({ password: e.target.value })} />
         </div>
       </Modal>
 
@@ -474,18 +512,11 @@ export default function AgenciesPage() {
 
 function btnStyle(color) {
   return {
-    display:      'inline-flex',
-    alignItems:   'center',
-    gap:          '4px',
-    padding:      '0.25rem 0.6rem',
-    background:   `${color}12`,
-    color:        color,
-    border:       `1px solid ${color}25`,
-    borderRadius: '6px',
-    fontSize:     '0.75rem',
-    fontWeight:   500,
-    cursor:       'pointer',
-    transition:   'all 0.15s',
-    whiteSpace:   'nowrap',
+    display: 'inline-flex', alignItems: 'center', gap: '4px',
+    padding: '0.25rem 0.6rem',
+    background: `${color}12`, color,
+    border: `1px solid ${color}25`, borderRadius: '6px',
+    fontSize: '0.75rem', fontWeight: 500, cursor: 'pointer',
+    transition: 'all 0.15s', whiteSpace: 'nowrap',
   }
 }
