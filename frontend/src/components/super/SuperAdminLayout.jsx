@@ -1,6 +1,6 @@
 import { LayoutDashboard, Building2, FileText, CreditCard, LogOut, Shield, Menu, X } from 'lucide-react'
 import { Link, useLocation }  from 'react-router-dom'
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback} from 'react'
 import { useSuperAdmin }      from '../../context/SuperAdminContext'
 
 export default function SuperAdminLayout({ title, subtitle, children }) {
@@ -9,27 +9,6 @@ export default function SuperAdminLayout({ title, subtitle, children }) {
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isMobile, setIsMobile]           = useState(window.innerWidth <= 1024)
-
-  // Utiliser useRef pour suivre le chemin précédent
-  const prevPathname = useRef(location.pathname)
-
-  // Gérer la fermeture de la sidebar quand la route change (uniquement sur mobile)
-  // Utiliser un effet séparé qui ne fait que mettre à jour la référence
-  useEffect(() => {
-    prevPathname.current = location.pathname
-  }, [location.pathname])
-
-  // Effet séparé pour fermer la sidebar - utilise un callback pour éviter l'avertissement
-  useEffect(() => {
-    // Utiliser setTimeout pour sortir du contexte de rendu React
-    const timeoutId = setTimeout(() => {
-      if (isMobile && isSidebarOpen) {
-        setIsSidebarOpen(false)
-      }
-    }, 0)
-    
-    return () => clearTimeout(timeoutId)
-  }, [location.pathname, isMobile, isSidebarOpen])
 
   useEffect(() => {
     const handleResize = () => {

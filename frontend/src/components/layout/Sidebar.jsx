@@ -144,7 +144,7 @@ export default function Sidebar({ isOpen, onClose, isMobile }) {
           Menu principal
         </div>
 
-        {navItems.filter(item => item.show).map((item, i) => {
+        {navItems.filter(item => item.show).map((item) => {
           const isActive = location.pathname === item.path
           return (
             <NavLink

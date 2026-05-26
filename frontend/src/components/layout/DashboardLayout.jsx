@@ -1,12 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import Navbar  from './Navbar'
 
 export default function DashboardLayout({ children, title, subtitle }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isMobile, setIsMobile]           = useState(window.innerWidth <= 1024)
-  const location                          = useLocation()
 
   useEffect(() => {
     const handleResize = () => {
