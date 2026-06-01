@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
 // Contexts
@@ -7,43 +8,44 @@ import { useTenantPortal } from './context/TenantPortalContext'
 import { useOwnerPortal }  from './context/OwnerPortalContext'
 import { AppProviders }    from './context/AppProviders'
 
-// UI
+// UI — chargé immédiatement car utilisé par tous les guards
 import { FullPageLoader } from './components/ui/Spinner'
 
+// ── Lazy imports — chaque page chargée uniquement quand visitée ──
+
 // Pages agence
-import LoginPage      from './pages/auth/LoginPage'
-import RegisterPage   from './pages/auth/RegisterPage'
-import DashboardPage  from './pages/dashboard/DashboardPage'
-import PropertiesPage from './pages/properties/PropertiesPage'
-import OwnersPage     from './pages/owners/OwnersPage'
-import TenantsPage    from './pages/tenants/TenantsPage'
-import ContractsPage  from './pages/contracts/ContractsPage'
-import PaymentsPage   from './pages/payments/PaymentsPage'
-import UsersPage      from './pages/users/UsersPage'
-import ProfilePage    from './pages/agency/ProfilePage'
-import BillingPage    from './pages/agency/BillingPage'
-import ExpensesPage   from './pages/expenses/ExpensesPage'
-import PaymentConfirmPage from './pages/payments/PaymentConfirmPage'
+const LoginPage           = lazy(() => import('./pages/auth/LoginPage'))
+const RegisterPage        = lazy(() => import('./pages/auth/RegisterPage'))
+const DashboardPage       = lazy(() => import('./pages/dashboard/DashboardPage'))
+const PropertiesPage      = lazy(() => import('./pages/properties/PropertiesPage'))
+const OwnersPage          = lazy(() => import('./pages/owners/OwnersPage'))
+const TenantsPage         = lazy(() => import('./pages/tenants/TenantsPage'))
+const ContractsPage       = lazy(() => import('./pages/contracts/ContractsPage'))
+const PaymentsPage        = lazy(() => import('./pages/payments/PaymentsPage'))
+const UsersPage           = lazy(() => import('./pages/users/UsersPage'))
+const ProfilePage         = lazy(() => import('./pages/agency/ProfilePage'))
+const BillingPage         = lazy(() => import('./pages/agency/BillingPage'))
+const ExpensesPage        = lazy(() => import('./pages/expenses/ExpensesPage'))
+const PaymentConfirmPage  = lazy(() => import('./pages/payments/PaymentConfirmPage'))
+const CashPage            = lazy(() => import('./pages/cash/CashPage'))
 
 // Pages super admin
-import SuperAdminLogin     from './pages/super/SuperAdminLogin'
-import SuperAdminDashboard from './pages/super/SuperAdminDashboard'
-import AgenciesPage        from './pages/super/AgenciesPage'
-import LogsPage            from './pages/super/LogsPage'
-import BillingAdminPage    from './pages/super/BillingAdminPage'
+// Groupées ensemble — un admin qui visite /super/dashboard
+// chargera probablement aussi agencies, logs, billing
+const SuperAdminLogin     = lazy(() => import('./pages/super/SuperAdminLogin'))
+const SuperAdminDashboard = lazy(() => import('./pages/super/SuperAdminDashboard'))
+const AgenciesPage        = lazy(() => import('./pages/super/AgenciesPage'))
+const LogsPage            = lazy(() => import('./pages/super/LogsPage'))
+const BillingAdminPage    = lazy(() => import('./pages/super/BillingAdminPage'))
 
-// Portail locataire
-import TenantLoginPage     from './pages/tenant/TenantLoginPage'
-import TenantDashboardPage from './pages/tenant/TenantDashboardPage'
-
-// Portail propriétaire
-import OwnerLoginPage     from './pages/owner/OwnerLoginPage'
-import OwnerDashboardPage from './pages/owner/OwnerDashboardPage'
-
-// Portail caissier
-import CashPage from './pages/cash/CashPage'
+// Portails — complètement séparés du SaaS principal
+const TenantLoginPage     = lazy(() => import('./pages/tenant/TenantLoginPage'))
+const TenantDashboardPage = lazy(() => import('./pages/tenant/TenantDashboardPage'))
+const OwnerLoginPage      = lazy(() => import('./pages/owner/OwnerLoginPage'))
+const OwnerDashboardPage  = lazy(() => import('./pages/owner/OwnerDashboardPage'))
 
 // ── Guards de routes ─────────────────────────────────────────
+// Inchangés — pas de lazy ici car utilisés sur chaque navigation
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth()
@@ -97,60 +99,64 @@ function OwnerPublicRoute({ children }) {
 
 function AppRoutes() {
   return (
-    <Routes>
-      {/* Auth agence */}
-      <Route path="/login"    element={<PublicRoute><LoginPage /></PublicRoute>} />
-      <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+    // Suspense intercepte le chargement lazy de chaque page
+    // FullPageLoader s'affiche pendant le téléchargement du chunk
+    <Suspense fallback={<FullPageLoader />}>
+      <Routes>
+        {/* Auth agence */}
+        <Route path="/login"    element={<PublicRoute><LoginPage /></PublicRoute>} />
+        <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
 
-      {/* App agence */}
-      <Route path="/dashboard"  element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
-      <Route path="/properties" element={<PrivateRoute><PropertiesPage /></PrivateRoute>} />
-      <Route path="/owners"     element={<PrivateRoute><OwnersPage /></PrivateRoute>} />
-      <Route path="/tenants"    element={<PrivateRoute><TenantsPage /></PrivateRoute>} />
-      <Route path="/contracts"  element={<PrivateRoute><ContractsPage /></PrivateRoute>} />
-      <Route path="/payments"   element={<PrivateRoute><PaymentsPage /></PrivateRoute>} />
-      <Route path="/users"      element={<PrivateRoute><UsersPage /></PrivateRoute>} />
-      <Route path="/profile"    element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
-      <Route path="/billing"    element={<PrivateRoute><BillingPage /></PrivateRoute>} />
-      <Route path="/expenses"   element={<PrivateRoute><ExpensesPage /></PrivateRoute>} />
-      <Route path="/cash"       element={<PrivateRoute><CashPage /></PrivateRoute>} />
+        {/* App agence */}
+        <Route path="/dashboard"  element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
+        <Route path="/properties" element={<PrivateRoute><PropertiesPage /></PrivateRoute>} />
+        <Route path="/owners"     element={<PrivateRoute><OwnersPage /></PrivateRoute>} />
+        <Route path="/tenants"    element={<PrivateRoute><TenantsPage /></PrivateRoute>} />
+        <Route path="/contracts"  element={<PrivateRoute><ContractsPage /></PrivateRoute>} />
+        <Route path="/payments"   element={<PrivateRoute><PaymentsPage /></PrivateRoute>} />
+        <Route path="/users"      element={<PrivateRoute><UsersPage /></PrivateRoute>} />
+        <Route path="/profile"    element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+        <Route path="/billing"    element={<PrivateRoute><BillingPage /></PrivateRoute>} />
+        <Route path="/expenses"   element={<PrivateRoute><ExpensesPage /></PrivateRoute>} />
+        <Route path="/cash"       element={<PrivateRoute><CashPage /></PrivateRoute>} />
 
-      {/* Paiement en ligne — public (retour CinetPay) */}
-      <Route path="/payments/confirm" element={<PaymentConfirmPage />} />
+        {/* Paiement en ligne — public (retour CinetPay) */}
+        <Route path="/payments/confirm" element={<PaymentConfirmPage />} />
 
-      {/* Super Admin */}
-      <Route path="/super/login"
-        element={<SuperPublicRoute><SuperAdminLogin /></SuperPublicRoute>} />
-      <Route path="/super/dashboard"
-        element={<SuperPrivateRoute><SuperAdminDashboard /></SuperPrivateRoute>} />
-      <Route path="/super/agencies"
-        element={<SuperPrivateRoute><AgenciesPage /></SuperPrivateRoute>} />
-      <Route path="/super/logs"
-        element={<SuperPrivateRoute><LogsPage /></SuperPrivateRoute>} />
-      <Route path="/super/billing"
-        element={<SuperPrivateRoute><BillingAdminPage /></SuperPrivateRoute>} />
+        {/* Super Admin */}
+        <Route path="/super/login"
+          element={<SuperPublicRoute><SuperAdminLogin /></SuperPublicRoute>} />
+        <Route path="/super/dashboard"
+          element={<SuperPrivateRoute><SuperAdminDashboard /></SuperPrivateRoute>} />
+        <Route path="/super/agencies"
+          element={<SuperPrivateRoute><AgenciesPage /></SuperPrivateRoute>} />
+        <Route path="/super/logs"
+          element={<SuperPrivateRoute><LogsPage /></SuperPrivateRoute>} />
+        <Route path="/super/billing"
+          element={<SuperPrivateRoute><BillingAdminPage /></SuperPrivateRoute>} />
 
-      {/* Portail Locataire */}
-      <Route path="/tenant/login"
-        element={<TenantPublicRoute><TenantLoginPage /></TenantPublicRoute>} />
-      <Route path="/tenant/dashboard"
-        element={<TenantPrivateRoute><TenantDashboardPage /></TenantPrivateRoute>} />
-      <Route path="/tenant"
-        element={<Navigate to="/tenant/dashboard" replace />} />
+        {/* Portail Locataire */}
+        <Route path="/tenant/login"
+          element={<TenantPublicRoute><TenantLoginPage /></TenantPublicRoute>} />
+        <Route path="/tenant/dashboard"
+          element={<TenantPrivateRoute><TenantDashboardPage /></TenantPrivateRoute>} />
+        <Route path="/tenant"
+          element={<Navigate to="/tenant/dashboard" replace />} />
 
-      {/* Portail Propriétaire */}
-      <Route path="/owner/login"
-        element={<OwnerPublicRoute><OwnerLoginPage /></OwnerPublicRoute>} />
-      <Route path="/owner/dashboard"
-        element={<OwnerPrivateRoute><OwnerDashboardPage /></OwnerPrivateRoute>} />
-      <Route path="/owner"
-        element={<Navigate to="/owner/dashboard" replace />} />
+        {/* Portail Propriétaire */}
+        <Route path="/owner/login"
+          element={<OwnerPublicRoute><OwnerLoginPage /></OwnerPublicRoute>} />
+        <Route path="/owner/dashboard"
+          element={<OwnerPrivateRoute><OwnerDashboardPage /></OwnerPrivateRoute>} />
+        <Route path="/owner"
+          element={<Navigate to="/owner/dashboard" replace />} />
 
-      {/* Redirections */}
-      <Route path="/"      element={<Navigate to="/dashboard" replace />} />
-      <Route path="/super" element={<Navigate to="/super/dashboard" replace />} />
-      <Route path="*"      element={<Navigate to="/dashboard" replace />} />
-    </Routes>
+        {/* Redirections */}
+        <Route path="/"      element={<Navigate to="/dashboard" replace />} />
+        <Route path="/super" element={<Navigate to="/super/dashboard" replace />} />
+        <Route path="*"      element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </Suspense>
   )
 }
 

@@ -1,4 +1,3 @@
-// vite.config.js
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -14,29 +13,33 @@ export default defineConfig({
 
     rollupOptions: {
       output: {
-        manualChunks: {
-          // React core
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-
-          // Bootstrap CSS framework
-          'vendor-bootstrap': ['bootstrap'],
-
-          // Lucide — dangereux si importé en masse
-          // ex: import { X, Y, Z, ... } from 'lucide-react' sur 20 pages = lourd
-          'vendor-icons': ['lucide-react'],
-
-          // Recharts — grosse lib de graphiques (~500kb)
-          'vendor-charts': ['recharts'],
-
-          // PDF generation — jspdf + html2canvas vont ensemble
-          // html2canvas est utilisé pour capturer le DOM avant export PDF
-          'vendor-pdf': ['jspdf', 'html2canvas'],
-
-          // Excel export — xlsx pèse ~800kb à lui seul
-          'vendor-excel': ['xlsx'],
-
-          // HTTP client
-          'vendor-http': ['axios'],
+        // Vite 8 (Rolldown) requiert une fonction, pas un objet
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+              return 'vendor-react'
+            }
+            if (id.includes('bootstrap')) {
+              return 'vendor-bootstrap'
+            }
+            if (id.includes('lucide-react')) {
+              return 'vendor-icons'
+            }
+            if (id.includes('recharts')) {
+              return 'vendor-charts'
+            }
+            if (id.includes('jspdf') || id.includes('html2canvas')) {
+              return 'vendor-pdf'
+            }
+            if (id.includes('xlsx')) {
+              return 'vendor-excel'
+            }
+            if (id.includes('axios')) {
+              return 'vendor-http'
+            }
+            // Toutes les autres dépendances node_modules ensemble
+            return 'vendor-misc'
+          }
         },
       },
     },
