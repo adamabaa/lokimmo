@@ -15,9 +15,9 @@ import {
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost/lokimmo/backend/public'
 
 export default function ProfilePage() {
-  const { show }              = useToast()
-  const { user, refreshAgency } = useAuth()
-  const isAdmin               = user?.role === 'admin'
+  const { show }                        = useToast()
+  const { user, agency, refreshAgency } = useAuth() // ← ajout de agency
+  const isAdmin                         = user?.role === 'admin'
 
   const [loading,       setLoading]       = useState(true)
   const [saving,        setSaving]        = useState(false)
@@ -36,6 +36,7 @@ export default function ProfilePage() {
     website: '', primary_color: '#d4a853', secondary_color: '#0f1117',
   })
 
+  // Chargement initial du profil et du plan
   useEffect(() => {
     const loadAll = async () => {
       try {
@@ -64,6 +65,14 @@ export default function ProfilePage() {
     loadAll()
   }, [])
 
+  // Synchronise logoPreview quand le contexte agency change
+  // Déclenché après refreshAgency() — met à jour l'aperçu sans reconnexion
+  useEffect(() => {
+    if (agency?.logo_url) {
+      setLogoPreview(`${API_URL}${agency.logo_url}`)
+    }
+  }, [agency?.logo_url])
+
   const save = async (e) => {
     e.preventDefault(); setSaving(true); setError('')
     try {
@@ -87,9 +96,14 @@ export default function ProfilePage() {
     setUploadingLogo(true)
     try {
       await agencyApi.uploadLogo(logoFile)
-      await refreshAgency()
+      await refreshAgency() // ← met à jour agency.logo_url dans le contexte
       show('Logo mis à jour', 'success')
       setLogoFile(null)
+      // Libère la mémoire de l'URL blob temporaire créée par createObjectURL
+      // logoPreview sera mis à jour automatiquement par le useEffect ci-dessus
+      if (logoPreview?.startsWith('blob:')) {
+        URL.revokeObjectURL(logoPreview)
+      }
     } catch (err) {
       show(err.response?.data?.message || 'Erreur upload', 'error')
     } finally { setUploadingLogo(false) }
@@ -150,7 +164,7 @@ export default function ProfilePage() {
               overflow: 'hidden', flexShrink: 0,
             }}>
               {logoPreview ? (
-                <img src={logoPreview} alt="Logo"
+                <img src={logoPreview} alt="Logo agence"
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
                 <Building2 size={28} style={{ opacity: 0.2 }} />
