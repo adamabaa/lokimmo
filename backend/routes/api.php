@@ -2,10 +2,7 @@
 
 use App\Middlewares\AuthMiddleware;
 
-// Route keep-alive — répond immédiatement sans auth ni DB
-$router->get('/api/ping', function() {
-    Response::json(['status' => 'ok', 'timestamp' => time()]);
-});
+$router->get('/api/ping', 'PingController@index');
 
 // ── Santé de l'API ──────────────────────────────────────────
 $router->get('/api/health', 'HealthController@index');
