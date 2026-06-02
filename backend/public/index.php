@@ -47,6 +47,7 @@ require_once BASE_PATH . '/app/Models/Payment.php';
 // 6. Controllers
 require_once BASE_PATH . '/app/Controllers/BaseController.php';
 require_once BASE_PATH . '/app/Controllers/HealthController.php';
+require_once BASE_PATH . '/app/Controllers/PingController.php';
 require_once BASE_PATH . '/app/Controllers/AuthController.php';
 require_once BASE_PATH . '/app/Controllers/UserController.php';
 require_once BASE_PATH . '/app/Controllers/OwnerController.php';
