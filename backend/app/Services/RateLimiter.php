@@ -55,7 +55,7 @@ class RateLimiter
 
         // IncrÃ©menter
         $pdo->prepare(
-            'UPDATE rate_limits SET attempts = attempts + 1 WHERE `key` = ?'
+            'UPDATE rate_limits SET attempts = attempts + 1, expires_at = expires_at WHERE `key` = ?'
         )->execute([$key]);
 
         return true;
@@ -98,7 +98,7 @@ class RateLimiter
                 'CREATE TABLE IF NOT EXISTS rate_limits (
                     `key`       VARCHAR(255) NOT NULL PRIMARY KEY,
                     attempts    INT UNSIGNED NOT NULL DEFAULT 1,
-                    expires_at  TIMESTAMP    NOT NULL,
+                    expires_at  DATETIME     NOT NULL,
                     INDEX idx_expires (expires_at)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4'
             );

@@ -14,6 +14,14 @@ class Response
         self::send(['success' => true, 'message' => $message, 'data' => $data], $status);
     }
 
+    public static function success(
+        mixed $data = null,
+        string $message = 'OK',
+        int $status = 200
+    ): void {
+        self::send(['success' => true, 'message' => $message, 'data' => $data], $status);
+    }
+
     public static function error(
         string $message,
         int $status = 400,

@@ -47,10 +47,27 @@ class App
 
     private static function setCorsHeaders(): void
     {
-        $allowedOrigins = array_filter(array_map(
-            'trim',
-            explode(',', env('ALLOWED_ORIGINS', ''))
-        ));
+        $allowedOrigins = [];
+        
+        $frontendUrl = env('FRONTEND_URL');
+        if ($frontendUrl) {
+            $allowedOrigins[] = trim($frontendUrl);
+        }
+        
+        $originsEnv = env('ALLOWED_ORIGINS');
+        if ($originsEnv) {
+            $originsList = explode(',', $originsEnv);
+            foreach ($originsList as $orig) {
+                $allowedOrigins[] = trim($orig);
+            }
+        }
+        
+        $allowedOrigins = array_unique(array_filter($allowedOrigins));
+        
+        // Si aucun n'est configuré, fallback en développement
+        if (empty($allowedOrigins)) {
+            $allowedOrigins[] = 'http://localhost:5173';
+        }
 
         $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
@@ -78,15 +95,27 @@ class App
                 "Uncaught Exception: " . $e->getMessage()
                 . " in " . $e->getFile() . ":" . $e->getLine()
             );
+            
+            $isProd = env('APP_ENV') === 'production';
+            
             if (!headers_sent()) {
                 http_response_code(500);
                 header('Content-Type: application/json; charset=utf-8');
             }
-            echo json_encode([
+            
+            $response = [
                 'success' => false,
-                'message' => 'Erreur serveur interne',
+                'message' => $isProd ? 'Erreur serveur interne' : $e->getMessage(),
                 'errors'  => [],
-            ]);
+            ];
+            
+            if (!$isProd) {
+                $response['file'] = $e->getFile();
+                $response['line'] = $e->getLine();
+                $response['trace'] = explode("\n", $e->getTraceAsString());
+            }
+            
+            echo json_encode($response);
             exit;
         });
 
@@ -94,14 +123,24 @@ class App
             $error = error_get_last();
             if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR])) {
                 error_log("Fatal Error: " . $error['message']);
+                $isProd = env('APP_ENV') === 'production';
+                
                 if (!headers_sent()) {
                     http_response_code(500);
                     header('Content-Type: application/json; charset=utf-8');
-                    echo json_encode([
+                    
+                    $response = [
                         'success' => false,
-                        'message' => 'Erreur serveur interne',
+                        'message' => $isProd ? 'Erreur serveur interne' : $error['message'],
                         'errors'  => [],
-                    ]);
+                    ];
+                    
+                    if (!$isProd) {
+                        $response['file'] = $error['file'];
+                        $response['line'] = $error['line'];
+                    }
+                    
+                    echo json_encode($response);
                 }
             }
         });

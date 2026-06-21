@@ -90,9 +90,22 @@ class Request
     private function parseHeaders(): array
     {
         $headers = [];
+        if (function_exists('getallheaders')) {
+            $rawHeaders = getallheaders();
+            if ($rawHeaders !== false) {
+                foreach ($rawHeaders as $key => $value) {
+                    $headers[strtolower($key)] = $value;
+                }
+                return $headers;
+            }
+        }
+
         foreach ($_SERVER as $key => $value) {
             if (str_starts_with($key, 'HTTP_')) {
                 $name = strtolower(str_replace('_', '-', substr($key, 5)));
+                $headers[$name] = $value;
+            } elseif (in_array($key, ['CONTENT_TYPE', 'CONTENT_LENGTH'])) {
+                $name = strtolower(str_replace('_', '-', $key));
                 $headers[$name] = $value;
             }
         }
